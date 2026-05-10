@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="de" id="root">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Daily Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#0f172a;--surface:#1e293b;--surface2:#263448;--border:#334155;--text:#f1f5f9;--muted:#94a3b8;--primary:#818cf8;--success:#4ade80;--danger:#f87171;--danger-bg:#3b0f0f;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg) center/cover fixed;color:var(--text);min-height:100vh;}
+.overlay{min-height:100vh;background:rgba(15,23,42,.93);}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+/* topbar */
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:12px 24px;background:var(--surface);border-bottom:1px solid var(--border);}
+.back-btn{color:var(--muted);text-decoration:none;font-size:.875rem;font-weight:500;transition:color .2s;}
+.back-btn:hover{color:var(--text);}
+.topbar-right{display:flex;align-items:center;gap:8px;}
+.lang-btn{padding:5px 12px;border-radius:16px;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-size:.8rem;font-weight:700;cursor:pointer;transition:all .2s;}
+.lang-btn.active{border-color:var(--primary);color:var(--primary);background:#818cf811;}
+.bg-btn{padding:5px 12px;border-radius:16px;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-size:.8rem;cursor:pointer;transition:all .2s;}
+.bg-btn:hover{color:var(--text);}
+/* tabs */
+.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;}
+.tab-btn{padding:13px 20px;border:none;background:none;cursor:pointer;font-size:.875rem;font-weight:500;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;}
+.tab-btn.active{color:var(--primary);border-bottom-color:var(--primary);}
+/* layout */
+.content{padding:24px;max-width:1200px;margin:0 auto;}
+.tab-content{display:none;}.tab-content.active{display:block;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.card{background:var(--surface);border-radius:12px;padding:20px;border:1px solid var(--border);}
+.card h2{font-size:.95rem;font-weight:600;margin-bottom:16px;}
+.mb{margin-bottom:16px;}
+/* inputs */
+input[type=text],input[type=date],input[type=number],select,textarea{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:.875rem;outline:none;transition:border-color .2s;background:var(--bg);color:var(--text);}
+input:focus,select:focus,textarea:focus{border-color:var(--primary);}
+select option{background:var(--surface);color:var(--text);}
+input[type=color]{width:44px;height:40px;padding:3px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;background:var(--bg);flex-shrink:0;}
+input[type=range]{width:100%;accent-color:var(--primary);cursor:pointer;}
+/* buttons */
+.btn{padding:10px 16px;border:none;border-radius:8px;cursor:pointer;font-size:.875rem;font-weight:500;transition:all .2s;}
+.btn-primary{background:var(--primary);color:#0f172a;font-weight:700;}
+.btn-primary:hover{background:#a5b4fc;}
+.btn-icon{background:none;border:none;cursor:pointer;padding:5px 7px;border-radius:5px;color:var(--muted);font-size:1rem;line-height:1;}
+.btn-icon:hover{color:var(--danger);background:var(--danger-bg);}
+/* type toggle */
+.type-btns{display:flex;gap:8px;}
+.type-btn{flex:1;padding:8px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--muted);cursor:pointer;font-size:.8rem;font-weight:500;transition:all .2s;}
+.type-btn.active{border-color:var(--primary);color:var(--primary);background:#818cf811;}
+/* form */
+.input-row{display:flex;gap:10px;margin-bottom:12px;align-items:center;}
+.form-row{margin-bottom:12px;}
+.form-label{font-size:.8rem;color:var(--muted);display:block;margin-bottom:5px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+/* progress */
+.prog-wrap{margin-bottom:16px;}
+.prog-info{display:flex;justify-content:space-between;font-size:.8rem;color:var(--muted);margin-bottom:6px;}
+.prog-bg{background:var(--border);border-radius:999px;height:8px;overflow:hidden;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--primary),#c084fc);border-radius:999px;transition:width .4s;}
+/* todo items */
+.todo-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:8px;background:var(--surface2);margin-bottom:8px;border:1px solid var(--border);position:relative;}
+.todo-item.done{opacity:.55;}
+.todo-item.done .todo-name{text-decoration:line-through;}
+.todo-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.todo-name{font-size:.875rem;font-weight:500;}
+.todo-cb{width:18px;height:18px;accent-color:var(--success);cursor:pointer;flex-shrink:0;}
+.todo-item .del-btn{opacity:0;transition:opacity .15s;flex-shrink:0;}
+.todo-item:hover .del-btn{opacity:1;}
+/* count todo */
+.count-body{flex:1;min-width:0;}
+.count-row{display:flex;align-items:center;gap:8px;margin-top:6px;}
+.count-val{font-size:.8rem;color:var(--primary);font-weight:700;white-space:nowrap;min-width:36px;text-align:right;}
+.count-max{font-size:.75rem;color:var(--muted);white-space:nowrap;}
+.mini-bar{height:4px;border-radius:2px;background:var(--border);overflow:hidden;margin-top:5px;}
+.mini-fill{height:100%;border-radius:2px;transition:width .3s;}
+/* empty */
+.empty{text-align:center;padding:28px;color:var(--muted);font-size:.875rem;}
+.empty .ico{font-size:2rem;margin-bottom:8px;}
+/* chart */
+.chart-wrap{position:relative;height:200px;}
+/* week */
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;}
+.wday{text-align:center;}
+.wday-label{font-size:.7rem;color:var(--muted);font-weight:600;margin-bottom:4px;}
+.wday-bar{height:60px;background:var(--bg);border-radius:6px;overflow:hidden;display:flex;align-items:flex-end;position:relative;border:1px solid var(--border);}
+.wday-fill{width:100%;background:linear-gradient(180deg,var(--primary),#6366f1);border-radius:6px;transition:height .4s;}
+.wday-pct{position:absolute;top:4px;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--muted);white-space:nowrap;}
+.wday.today .wday-label{color:var(--success);font-weight:800;}
+.wday.today .wday-fill{background:linear-gradient(180deg,var(--success),#16a34a);}
+.wday-date{font-size:.6rem;color:#475569;margin-top:3px;}
+/* section title */
+.section-title{font-size:1.05rem;font-weight:600;margin:24px 0 14px;}
+/* calendar */
+.cal-headers{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px;}
+.cal-header{font-size:.7rem;color:var(--muted);text-align:center;font-weight:600;padding:4px 0;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.cal-day{aspect-ratio:1;border-radius:5px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:.7rem;}
+.cal-day-num{font-weight:600;}
+.cal-day-pct{font-size:.55rem;margin-top:1px;}
+.legend{display:flex;gap:12px;margin-top:12px;font-size:.75rem;color:var(--muted);flex-wrap:wrap;}
+.leg-dot{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:middle;margin-right:3px;}
+/* stats */
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;}
+.stat-num{font-size:1.75rem;font-weight:700;color:var(--primary);}
+.stat-lbl{font-size:.75rem;color:var(--muted);margin-top:4px;}
+/* activity */
+.act-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:8px;background:var(--surface2);margin-bottom:8px;border:1px solid var(--border);}
+.act-icon{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0;background:var(--bg);}
+.act-info{flex:1;}
+.act-name{font-size:.875rem;font-weight:600;display:flex;align-items:center;gap:8px;}
+.act-meta{font-size:.75rem;color:var(--muted);margin-top:2px;}
+.badge{display:inline-block;padding:2px 7px;border-radius:999px;font-size:.7rem;font-weight:600;}
+.badge-low{background:#14532d;color:#4ade80;}
+.badge-medium{background:#422006;color:#fbbf24;}
+.badge-high{background:#450a0a;color:#f87171;}
+/* toast */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--surface);color:var(--text);border:1px solid var(--border);padding:12px 20px;border-radius:8px;font-size:.875rem;z-index:1000;transform:translateY(80px);opacity:0;transition:all .3s;pointer-events:none;box-shadow:0 4px 20px #00000077;}
+.toast.show{transform:translateY(0);opacity:1;}
+#bg-input{display:none;}
+@media(max-width:768px){.grid-2{grid-template-columns:1fr;}.grid-3{grid-template-columns:1fr 1fr;}.content{padding:14px;}}
+</style>
+</head>
+<body id="body">
+<input type="file" id="bg-input" accept="image/*" onchange="pickBg(this)">
+<div class="overlay">
+
+<div class="topbar">
+  <a href="index.html" class="back-btn" id="back-btn">← Dashboard</a>
+  <div class="topbar-right">
+    <button class="bg-btn" id="bg-btn" onclick="document.getElementById('bg-input').click()"></button>
+    <button class="lang-btn" id="l-de" onclick="setLang('de')">DE</button>
+    <button class="lang-btn" id="l-en" onclick="setLang('en')">EN</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" id="tbtn-todos" onclick="switchTab('todos',this)"></button>
+  <button class="tab-btn" id="tbtn-sport" onclick="switchTab('sport',this)"></button>
+</div>
+
+<div class="content">
+
+<div id="tab-todos" class="tab-content active">
+  <div class="grid-2">
+    <div>
+      <div class="card mb">
+        <h2 id="h-new-todo"></h2>
+        <div class="input-row">
+          <input type="text" id="new-todo-name" style="flex:1;">
+          <input type="color" id="new-todo-color" value="#818cf8">
+        </div>
+        <div class="form-row">
+          <label class="form-label" id="lbl-type"></label>
+          <div class="type-btns">
+            <button class="type-btn active" id="type-bool" onclick="setTodoType('boolean')"></button>
+            <button class="type-btn" id="type-count" onclick="setTodoType('count')"></button>
+          </div>
+        </div>
+        <div id="target-row" class="form-row" style="display:none;">
+          <label class="form-label" id="lbl-target"></label>
+          <input type="number" id="new-todo-target" min="1" max="999">
+        </div>
+        <button class="btn btn-primary" id="add-btn" onclick="addTodo()" style="width:100%;"></button>
+      </div>
+      <div class="card">
+        <h2 id="h-today"></h2>
+        <div class="prog-wrap">
+          <div class="prog-info"><span id="lbl-prog"></span><span id="today-pct">0%</span></div>
+          <div class="prog-bg"><div class="prog-fill" id="today-bar" style="width:0%"></div></div>
+        </div>
+        <div id="today-todos"></div>
+      </div>
+    </div>
+    <div>
+      <div class="card mb">
+        <h2 id="h-chart"></h2>
+        <div class="chart-wrap"><canvas id="progress-chart"></canvas></div>
+      </div>
+      <div class="card">
+        <h2 id="h-week"></h2>
+        <div class="week-grid" id="week-overview"></div>
+      </div>
+    </div>
+  </div>
+  <p class="section-title" id="h-month"></p>
+  <div class="card">
+    <div class="cal-headers" id="cal-headers"></div>
+    <div class="cal-grid" id="month-cal"></div>
+    <div class="legend" id="legend-box"></div>
+  </div>
+  <p class="section-title" id="h-manage"></p>
+  <div class="card"><div id="todos-manage"></div></div>
+</div>
+
+<div id="tab-sport" class="tab-content">
+  <div class="grid-2">
+    <div class="card">
+      <h2 id="h-add-act"></h2>
+      <div class="form-row"><label class="form-label" id="lbl-stype"></label><select id="sport-type"></select></div>
+      <div class="form-row"><label class="form-label" id="lbl-scustom"></label><input type="text" id="sport-custom"></div>
+      <div class="form-grid">
+        <div><label class="form-label" id="lbl-sdate"></label><input type="date" id="sport-date"></div>
+        <div><label class="form-label" id="lbl-sdur"></label><input type="number" id="sport-duration" min="1" max="600"></div>
+      </div>
+      <div class="form-row"><label class="form-label" id="lbl-sint"></label>
+        <select id="sport-intensity">
+          <option value="low" id="int-low"></option>
+          <option value="medium" id="int-med" selected></option>
+          <option value="high" id="int-high"></option>
+        </select>
+      </div>
+      <div class="form-row"><label class="form-label" id="lbl-snote"></label><textarea id="sport-notes" rows="2" style="resize:none;"></textarea></div>
+      <button class="btn btn-primary" id="save-btn" onclick="addActivity()" style="width:100%;"></button>
+    </div>
+    <div>
+      <div class="grid-3" id="sport-stats" style="margin-bottom:16px;"></div>
+      <div class="card"><h2 id="h-schart"></h2><div class="chart-wrap"><canvas id="sport-chart"></canvas></div></div>
+    </div>
+  </div>
+  <p class="section-title" id="h-ahist"></p>
+  <div class="card"><div id="activities-list"></div></div>
+</div>
+
+</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── i18n ──────────────────────────────────────────────────
+const TR={
+de:{
+  back:'← Dashboard',tbTodos:'✅ Todos & Fortschritt',tbSport:'🏃 Sport Aktivitäten',
+  hNew:'➕ Neues Daily Todo',tHolder:'Todo eingeben...',lType:'Erledigungstyp',
+  tBool:'✓ Ja / Nein',tCount:'🔢 Anzahl',lTarget:'Ziel (max. Anzahl)',tHolder2:'z.B. 10',
+  addBtn:'Hinzufügen',hToday:'📋 Heute',lProg:'Fortschritt',
+  hChart:'📈 Fortschritt — letzte 30 Tage',hWeek:'🗓️ Wochenübersicht',
+  hManage:'⚙️ Todos verwalten',hAddAct:'➕ Aktivität hinzufügen',
+  lSType:'Sportart',lSCustom:'Eigene Sportart (überschreibt oben)',sHolder:'z.B. Crossfit...',
+  lDate:'Datum',lDur:'Dauer (Minuten)',durHolder:'60',lInt:'Intensität',
+  lNote:'Notizen (optional)',noteHolder:'Wie war das Training?',saveBtn:'Speichern',
+  hSChart:'📊 Minuten pro Woche',hAHist:'📋 Aktivitätsverlauf',
+  bgBtn:'🖼 Hintergrundbild',
+  sTotal:'Stunden gesamt',sWeek:'Min. diese Woche',sNone:'Kein Sport',
+  iLow:'😌 Leicht',iMed:'💪 Mittel',iHigh:'🔥 Hart',
+  iLS:'Leicht',iMS:'Mittel',iHS:'Hart',
+  eT:'Noch keine Todos. Füge dein erstes hinzu!',eM:'Noch keine Todos vorhanden',
+  eA:'Noch keine Aktivitäten. Leg los!',yesNo:'✓ Ja / Nein',goal:'Ziel',
+  leg:'Legende:',l1:'1–49%',l2:'50–79%',l3:'80–99%',l4:'100%',
+  calD:['Mo','Di','Mi','Do','Fr','Sa','So'],
+  days:['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'],
+  months:['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'],
+  opts:['🏃 Laufen','🚴 Radfahren','🏊 Schwimmen','🏋️ Krafttraining','🧘 Yoga','⚽ Fußball','🏀 Basketball','🎾 Tennis','🥾 Wandern','🔥 HIIT','🥊 Boxen','🧗 Klettern','🏄 Surfen','⛷️ Ski','💪 Sonstiges'],
+  tDel:'Todo gelöscht',aDel:'Aktivität gelöscht'
+},
+en:{
+  back:'← Dashboard',tbTodos:'✅ Todos & Progress',tbSport:'🏃 Sports Activities',
+  hNew:'➕ New Daily Todo',tHolder:'Enter todo...',lType:'Completion type',
+  tBool:'✓ Yes / No',tCount:'🔢 Count',lTarget:'Goal (max. count)',tHolder2:'e.g. 10',
+  addBtn:'Add',hToday:'📋 Today',lProg:'Progress',
+  hChart:'📈 Progress — last 30 days',hWeek:'🗓️ Weekly overview',
+  hManage:'⚙️ Manage todos',hAddAct:'➕ Add activity',
+  lSType:'Sport',lSCustom:'Custom sport (overrides above)',sHolder:'e.g. Crossfit...',
+  lDate:'Date',lDur:'Duration (min)',durHolder:'60',lInt:'Intensity',
+  lNote:'Notes (optional)',noteHolder:'How was the workout?',saveBtn:'Save',
+  hSChart:'📊 Minutes per week',hAHist:'📋 Activity history',
+  bgBtn:'🖼 Background',
+  sTotal:'Total hours',sWeek:'Min. this week',sNone:'No sport',
+  iLow:'😌 Easy',iMed:'💪 Medium',iHigh:'🔥 Hard',
+  iLS:'Easy',iMS:'Medium',iHS:'Hard',
+  eT:'No todos yet. Add your first!',eM:'No todos yet',
+  eA:'No activities yet. Get moving!',yesNo:'✓ Yes / No',goal:'Goal',
+  leg:'Legend:',l1:'1–49%',l2:'50–79%',l3:'80–99%',l4:'100%',
+  calD:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+  days:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
+  months:['January','February','March','April','May','June','July','August','September','October','November','December'],
+  opts:['🏃 Running','🚴 Cycling','🏊 Swimming','🏋️ Strength','🧘 Yoga','⚽ Football','🏀 Basketball','🎾 Tennis','🥾 Hiking','🔥 HIIT','🥊 Boxing','🧗 Climbing','🏄 Surfing','⛷️ Skiing','💪 Other'],
+  tDel:'Todo deleted',aDel:'Activity deleted'
+}
+};
+
+const LANG_KEY='dt-lang',BG_KEY='dt-bg',DATA_KEY='daily-tracker-v2';
+let lang=localStorage.getItem(LANG_KEY)||'de';
+function t(k){return TR[lang][k]||k;}
+
+function setLang(l){
+  lang=l;localStorage.setItem(LANG_KEY,l);
+  applyLang();renderTodos();if(document.getElementById('tab-sport').classList.contains('active'))renderSport();
+}
+
+function applyLang(){
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  const ph=(id,v)=>{const e=document.getElementById(id);if(e)e.placeholder=v;};
+  document.getElementById('root').lang=lang;
+  set('back-btn',t('back'));
+  set('tbtn-todos',t('tbTodos'));set('tbtn-sport',t('tbSport'));
+  set('h-new-todo',t('hNew'));ph('new-todo-name',t('tHolder'));
+  set('lbl-type',t('lType'));set('type-bool',t('tBool'));set('type-count',t('tCount'));
+  set('lbl-target',t('lTarget'));ph('new-todo-target',t('tHolder2'));
+  set('add-btn',t('addBtn'));set('lbl-prog',t('lProg'));
+  set('h-chart',t('hChart'));set('h-week',t('hWeek'));set('h-manage',t('hManage'));
+  set('h-add-act',t('hAddAct'));set('lbl-stype',t('lSType'));
+  set('lbl-scustom',t('lSCustom'));ph('sport-custom',t('sHolder'));
+  set('lbl-sdate',t('lDate'));set('lbl-sdur',t('lDur'));ph('sport-duration',t('durHolder'));
+  set('lbl-sint',t('lInt'));set('lbl-snote',t('lNote'));ph('sport-notes',t('noteHolder'));
+  set('save-btn',t('saveBtn'));set('h-schart',t('hSChart'));set('h-ahist',t('hAHist'));
+  set('bg-btn',t('bgBtn'));set('int-low',t('iLow'));set('int-med',t('iMed'));set('int-high',t('iHigh'));
+  document.getElementById('l-de').classList.toggle('active',lang==='de');
+  document.getElementById('l-en').classList.toggle('active',lang==='en');
+  // Sport options
+  const sel=document.getElementById('sport-type');
+  const cur=sel.selectedIndex;
+  sel.innerHTML=t('opts').map(o=>`<option>${o}</option>`).join('');
+  sel.selectedIndex=Math.max(0,Math.min(cur,sel.options.length-1));
+  // Cal headers
+  document.getElementById('cal-headers').innerHTML=t('calD').map(d=>`<div class="cal-header">${d}</div>`).join('');
+  // Legend
+  document.getElementById('legend-box').innerHTML=
+    `<span>${t('leg')}</span>`+
+    ['#14532d','#166534','#15803d','#4ade80'].map((c,i)=>`<span><span class="leg-dot" style="background:${c}"></span>${t('l'+(i+1))}</span>`).join('');
+}
+
+// ── Storage ───────────────────────────────────────────────
+function defData(){return{todos:[],completions:{},activities:[]};}
+function load(){try{return JSON.parse(localStorage.getItem(DATA_KEY))||defData();}catch{return defData();}}
+function save(){localStorage.setItem(DATA_KEY,JSON.stringify(data));}
+let data=load();
+Object.keys(data.completions).forEach(d=>{if(Array.isArray(data.completions[d])){const o={};data.completions[d].forEach(id=>o[id]=1);data.completions[d]=o;}});
+data.todos.forEach(td=>{if(!td.type){td.type='boolean';td.target=1;}});
+
+// ── Utils ─────────────────────────────────────────────────
+function todayStr(){return new Date().toISOString().split('T')[0];}
+function dateRange(n){return Array.from({length:n},(_,i)=>{const d=new Date();d.setDate(d.getDate()-(n-1-i));return d.toISOString().split('T')[0];});}
+function getVal(ds,id){return(data.completions[ds]||{})[id]||0;}
+function setVal(ds,id,v){if(!data.completions[ds])data.completions[ds]={};if(!v)delete data.completions[ds][id];else data.completions[ds][id]=v;}
+function ratio(ds,td){const v=getVal(ds,td.id);return td.type==='count'?Math.min(v/(td.target||1),1):(v?1:0);}
+function pct(ds){const a=data.todos.filter(x=>x.active);if(!a.length)return 0;return Math.round(a.reduce((s,x)=>s+ratio(ds,x),0)/a.length*100);}
+function uid(){return Math.random().toString(36).slice(2,11);}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmtDate(s){const[y,m,d]=s.split('-');return`${d}.${m}.${y}`;}
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2400);}
+
+// ── Background ────────────────────────────────────────────
+function pickBg(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{localStorage.setItem(BG_KEY,e.target.result);applyBg(e.target.result);};r.readAsDataURL(f);}
+function applyBg(url){document.getElementById('body').style.backgroundImage=`url(${url})`;}
+
+// ── Tabs ──────────────────────────────────────────────────
+function switchTab(name,btn){
+  document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');btn.classList.add('active');
+  if(name==='todos')renderTodos();else renderSport();
+}
+
+// ── Todo type ─────────────────────────────────────────────
+let newType='boolean';
+function setTodoType(type){
+  newType=type;
+  document.getElementById('type-bool').classList.toggle('active',type==='boolean');
+  document.getElementById('type-count').classList.toggle('active',type==='count');
+  document.getElementById('target-row').style.display=type==='count'?'block':'none';
+}
+
+// ── Todos ─────────────────────────────────────────────────
+function addTodo(){
+  const name=document.getElementById('new-todo-name').value.trim();
+  const color=document.getElementById('new-todo-color').value;
+  const target=newType==='count'?(parseInt(document.getElementById('new-todo-target').value)||10):1;
+  if(!name){toast(lang==='de'?'Bitte Namen eingeben!':'Please enter a name!');return;}
+  data.todos.push({id:uid(),name,color,type:newType,target,active:true});
+  save();document.getElementById('new-todo-name').value='';document.getElementById('new-todo-target').value='';
+  renderTodos();toast('"'+name+'"'+(lang==='de'?' hinzugefügt ✓':' added ✓'));
+}
+function deleteTodo(id){
+  data.todos=data.todos.filter(x=>x.id!==id);
+  Object.values(data.completions).forEach(o=>{if(typeof o==='object'&&!Array.isArray(o))delete o[id];});
+  save();renderTodos();toast(t('tDel'));
+}
+function toggleBool(id){setVal(todayStr(),id,getVal(todayStr(),id)?0:1);save();refreshCharts();renderTodayPanel();}
+function sliderInput(id,raw){
+  const val=parseInt(raw)||0,td=data.todos.find(x=>x.id===id);if(!td)return;
+  if(!data.completions[todayStr()])data.completions[todayStr()]={};
+  if(val===0)delete data.completions[todayStr()][id];else data.completions[todayStr()][id]=val;
+  const cv=document.getElementById('cv-'+id);if(cv)cv.textContent=val;
+  const cf=document.getElementById('cf-'+id);if(cf)cf.style.width=Math.min(val/td.target*100,100)+'%';
+  const item=document.getElementById('item-'+id);if(item)item.classList.toggle('done',val>=td.target);
+  refreshTodayProgress();
+}
+function sliderChange(id,raw){setVal(todayStr(),id,parseInt(raw)||0);save();refreshCharts();}
+function refreshTodayProgress(){
+  const day=todayStr(),active=data.todos.filter(x=>x.active);
+  const dn=active.filter(x=>x.type==='count'?getVal(day,x.id)>=x.target:getVal(day,x.id)===1).length;
+  const p=active.length?Math.round(active.reduce((s,x)=>s+ratio(day,x),0)/active.length*100):0;
+  document.getElementById('today-pct').textContent=p+'%';
+  document.getElementById('today-bar').style.width=p+'%';
+  document.getElementById('h-today').innerHTML=`${t('hToday')} — <span id="done-count">${dn}</span> / <span id="total-count">${active.length}</span>`;
+}
+function refreshCharts(){renderProgressChart();renderWeek();renderMonthCal();}
+
+function renderTodayPanel(){
+  const day=todayStr(),active=data.todos.filter(x=>x.active);
+  const dn=active.filter(x=>x.type==='count'?getVal(day,x.id)>=x.target:getVal(day,x.id)===1).length;
+  const p=active.length?Math.round(active.reduce((s,x)=>s+ratio(day,x),0)/active.length*100):0;
+  document.getElementById('h-today').innerHTML=`${t('hToday')} — <span id="done-count">${dn}</span> / <span id="total-count">${active.length}</span>`;
+  document.getElementById('today-pct').textContent=p+'%';
+  document.getElementById('today-bar').style.width=p+'%';
+  const list=document.getElementById('today-todos');
+  if(!active.length){list.innerHTML=`<div class="empty"><div class="ico">📝</div>${t('eT')}</div>`;return;}
+  list.innerHTML=active.map(td=>{
+    const val=getVal(day,td.id);
+    if(td.type==='count'){
+      const done=val>=td.target,fill=Math.min(Math.round(val/td.target*100),100);
+      return`<div class="todo-item${done?' done':''}" id="item-${td.id}" style="align-items:flex-start;">
+        <div class="todo-dot" style="background:${td.color};margin-top:3px;flex-shrink:0;"></div>
+        <div class="count-body"><div class="todo-name">${esc(td.name)}</div>
+          <div class="count-row">
+            <input type="range" min="0" max="${td.target}" value="${val}" oninput="sliderInput('${td.id}',this.value)" onchange="sliderChange('${td.id}',this.value)">
+            <span class="count-val" id="cv-${td.id}">${val}</span><span class="count-max">/ ${td.target}</span>
+          </div>
+          <div class="mini-bar"><div class="mini-fill" id="cf-${td.id}" style="width:${fill}%;background:${td.color};"></div></div>
+        </div>
+        <button class="btn-icon del-btn" onclick="deleteTodo('${td.id}')">🗑️</button>
+      </div>`;
+    }
+    const done=val===1;
+    return`<div class="todo-item${done?' done':''}">
+      <div class="todo-dot" style="background:${td.color}"></div>
+      <input class="todo-cb" type="checkbox"${done?' checked':''} onchange="toggleBool('${td.id}')">
+      <span class="todo-name">${esc(td.name)}</span>
+      <button class="btn-icon del-btn" onclick="deleteTodo('${td.id}')">🗑️</button>
+    </div>`;
+  }).join('');
+}
+function renderManage(){
+  const el=document.getElementById('todos-manage');
+  if(!data.todos.length){el.innerHTML=`<div class="empty"><div class="ico">⚙️</div>${t('eM')}</div>`;return;}
+  el.innerHTML=data.todos.map(td=>`<div class="todo-item">
+    <div class="todo-dot" style="background:${td.color}"></div>
+    <div style="flex:1;"><div class="todo-name">${esc(td.name)}</div>
+    <div style="font-size:.75rem;color:var(--muted);margin-top:2px;">${td.type==='count'?`🔢 ${t('goal')}: ${td.target}`:t('yesNo')}</div></div>
+    <button class="btn-icon" onclick="deleteTodo('${td.id}')">🗑️</button>
+  </div>`).join('');
+}
+
+// ── Charts ────────────────────────────────────────────────
+let chartP=null;
+function renderProgressChart(){
+  const days=dateRange(30),labels=days.map(d=>{const[,m,dy]=d.split('-');return`${dy}.${m}`;}),vals=days.map(d=>pct(d));
+  const colors=vals.map(v=>v===100?'#4ade80':v>=80?'#22c55e':v>=50?'#166534':v>0?'#14532d':'#1e293b');
+  if(chartP){chartP.data.labels=labels;chartP.data.datasets[0].data=vals;chartP.data.datasets[0].backgroundColor=colors;chartP.update('none');return;}
+  Chart.defaults.color='#94a3b8';
+  chartP=new Chart(document.getElementById('progress-chart'),{type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:colors,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%',font:{size:10},color:'#94a3b8'},grid:{color:'#1e293b'}},x:{ticks:{font:{size:9},maxRotation:45,color:'#64748b'},grid:{display:false}}}}});
+}
+function renderWeek(){
+  const days=dateRange(7),today=todayStr();
+  document.getElementById('week-overview').innerHTML=days.map(d=>{
+    const p=pct(d),h=Math.round(p*.6),dt=new Date(d),isT=d===today;
+    return`<div class="wday${isT?' today':''}">
+      <div class="wday-label">${t('calD')[(dt.getDay()+6)%7]}</div>
+      <div class="wday-bar">${p>0?`<span class="wday-pct">${p}%</span>`:''}<div class="wday-fill" style="height:${h}px"></div></div>
+      <div class="wday-date">${dt.getDate()}.${dt.getMonth()+1}</div>
+    </div>`;
+  }).join('');
+}
+function renderMonthCal(){
+  const now=new Date(),y=now.getFullYear(),m=now.getMonth();
+  document.getElementById('h-month').textContent=`📅 ${t('months')[m]} ${y}`;
+  const days=new Date(y,m+1,0).getDate(),first=(new Date(y,m,1).getDay()+6)%7,today=todayStr();
+  let html='';
+  for(let i=0;i<first;i++)html+='<div class="cal-day"></div>';
+  for(let d=1;d<=days;d++){
+    const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const p=pct(ds),isFuture=ds>today,isToday=ds===today;
+    let bg='#1e293b',fg=isFuture?'#334155':'#64748b';
+    if(!isFuture&&p>0){if(p===100){bg='#4ade80';fg='#052e16';}else if(p>=80){bg='#15803d';fg='#bbf7d0';}else if(p>=50){bg='#166534';fg='#bbf7d0';}else{bg='#14532d';fg='#86efac';}}
+    html+=`<div class="cal-day" style="background:${bg};color:${fg};${isToday?'outline:2px solid #818cf8;outline-offset:1px;':''}" title="${fmtDate(ds)}${p>0?': '+p+'%':''}"><span class="cal-day-num">${d}</span>${p>0?`<span class="cal-day-pct">${p}%</span>`:''}</div>`;
+  }
+  document.getElementById('month-cal').innerHTML=html;
+}
+function renderTodos(){renderTodayPanel();renderManage();renderProgressChart();renderWeek();renderMonthCal();}
+
+// ── Sport ─────────────────────────────────────────────────
+function addActivity(){
+  const raw=document.getElementById('sport-type').value;
+  const custom=document.getElementById('sport-custom').value.trim();
+  const type=custom||raw.replace(/^[\p{Emoji}\s]+/u,'').trim();
+  const emoji=custom?'💪':(raw.match(/^([\p{Emoji}])/u)?.[0]||'💪');
+  const date=document.getElementById('sport-date').value;
+  const duration=parseInt(document.getElementById('sport-duration').value)||0;
+  const intensity=document.getElementById('sport-intensity').value;
+  const notes=document.getElementById('sport-notes').value.trim();
+  if(!date){toast(lang==='de'?'Bitte Datum wählen!':'Please select a date!');return;}
+  if(duration<=0){toast(lang==='de'?'Bitte Dauer eingeben!':'Please enter duration!');return;}
+  data.activities.push({id:uid(),type,emoji,date,duration,intensity,notes});
+  save();document.getElementById('sport-custom').value='';document.getElementById('sport-duration').value='';document.getElementById('sport-notes').value='';
+  renderSport();toast(type+(lang==='de'?' gespeichert ✓':' saved ✓'));
+}
+function deleteActivity(id){data.activities=data.activities.filter(a=>a.id!==id);save();renderSport();toast(t('aDel'));}
+function renderSportStats(){
+  const acts=data.activities,tm=acts.reduce((s,a)=>s+a.duration,0);
+  const wds=dateRange(7),wm=acts.filter(a=>wds.includes(a.date)).reduce((s,a)=>s+a.duration,0);
+  const counts={};acts.forEach(a=>counts[a.type]=(counts[a.type]||0)+1);
+  const top=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('sport-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-num">${(tm/60).toFixed(1)}</div><div class="stat-lbl">${t('sTotal')}</div></div>
+    <div class="stat-card"><div class="stat-num">${wm}</div><div class="stat-lbl">${t('sWeek')}</div></div>
+    <div class="stat-card"><div class="stat-num">${top?(acts.find(a=>a.type===top[0])?.emoji||'💪'):'—'}</div><div class="stat-lbl">${top?esc(top[0]):t('sNone')}</div></div>`;
+}
+function renderActivities(){
+  const el=document.getElementById('activities-list');
+  const sorted=[...data.activities].sort((a,b)=>b.date.localeCompare(a.date));
+  if(!sorted.length){el.innerHTML=`<div class="empty"><div class="ico">🏃</div>${t('eA')}</div>`;return;}
+  const iL={low:t('iLS'),medium:t('iMS'),high:t('iHS')},iC={low:'badge-low',medium:'badge-medium',high:'badge-high'};
+  el.innerHTML=sorted.map(a=>{
+    const h=Math.floor(a.duration/60),mn=a.duration%60,dur=h>0?`${h}h ${mn}min`:`${mn}min`;
+    return`<div class="act-item"><div class="act-icon">${esc(a.emoji)}</div>
+      <div class="act-info"><div class="act-name">${esc(a.type)} <span class="badge ${iC[a.intensity]}">${iL[a.intensity]}</span></div>
+      <div class="act-meta">${fmtDate(a.date)} · ${dur}${a.notes?' · '+esc(a.notes):''}</div></div>
+      <button class="btn-icon" onclick="deleteActivity('${a.id}')">🗑️</button></div>`;
+  }).join('');
+}
+let chartS=null;
+function renderSportChart(){
+  const weeks=[];for(let i=7;i>=0;i--){const mon=new Date();mon.setDate(mon.getDate()-(mon.getDay()+6)%7-i*7);mon.setHours(0,0,0,0);const sun=new Date(mon);sun.setDate(sun.getDate()+6);weeks.push({label:`${mon.getDate()}.${mon.getMonth()+1}`,start:mon,end:sun});}
+  const labels=weeks.map(w=>w.label),vals=weeks.map(w=>data.activities.filter(a=>{const d=new Date(a.date);return d>=w.start&&d<=w.end;}).reduce((s,a)=>s+a.duration,0));
+  if(chartS){chartS.data.labels=labels;chartS.data.datasets[0].data=vals;chartS.update('none');return;}
+  chartS=new Chart(document.getElementById('sport-chart'),{type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:'#818cf822',borderColor:'#818cf8',borderWidth:2,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:0,ticks:{callback:v=>v+' Min',font:{size:10},color:'#94a3b8'},grid:{color:'#1e293b'}},x:{ticks:{font:{size:11},color:'#94a3b8'},grid:{display:false}}}}});
+}
+function renderSport(){renderSportStats();renderActivities();renderSportChart();}
+
+// ── Init ──────────────────────────────────────────────────
+const savedBg=localStorage.getItem(BG_KEY);if(savedBg)applyBg(savedBg);
+applyLang();
+const urlTab=new URLSearchParams(location.search).get('tab');
+if(urlTab==='sport'){
+  document.getElementById('tab-todos').classList.remove('active');
+  document.getElementById('tab-sport').classList.add('active');
+  document.getElementById('tbtn-todos').classList.remove('active');
+  document.getElementById('tbtn-sport').classList.add('active');
+  renderSport();
+}else{
+  renderTodos();
+}
+document.getElementById('sport-date').value=todayStr();
+document.getElementById('new-todo-name').addEventListener('keydown',e=>{if(e.key==='Enter')addTodo();});
+</script>
+</body>
+</html>

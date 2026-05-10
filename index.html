@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="de" id="root">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Daily Tracker</title>
+<style>
+:root{--bg:#0f172a;--surface:#1e293b;--border:#334155;--text:#f1f5f9;--muted:#94a3b8;--primary:#818cf8;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;background:var(--bg) center/cover fixed;color:var(--text);}
+.overlay{min-height:100vh;background:linear-gradient(160deg,rgba(15,23,42,.93),rgba(49,30,129,.82));display:flex;flex-direction:column;}
+/* topbar */
+.topbar{display:flex;justify-content:flex-end;align-items:center;padding:18px 28px;gap:8px;}
+.lang-btn{padding:5px 13px;border-radius:20px;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-size:.8rem;font-weight:700;cursor:pointer;transition:all .2s;}
+.lang-btn.active{border-color:var(--primary);color:var(--primary);background:#818cf811;}
+.bg-btn{padding:5px 13px;border-radius:20px;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-size:.8rem;cursor:pointer;transition:all .2s;}
+.bg-btn:hover{color:var(--text);border-color:rgba(255,255,255,.2);}
+/* hero */
+.hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 24px 80px;text-align:center;}
+.greeting{font-size:.82rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+.main-title{font-size:3.4rem;font-weight:800;background:linear-gradient(135deg,#a5b4fc,#e879f9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1;margin-bottom:10px;}
+.hero-date{font-size:.95rem;color:var(--muted);margin-bottom:60px;}
+/* cards */
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:22px;max-width:680px;width:100%;}
+.nav-card{background:rgba(30,41,59,.55);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.07);border-radius:22px;padding:34px 26px;cursor:pointer;transition:all .28s;text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:10px;}
+.nav-card:hover{background:rgba(30,41,59,.9);border-color:rgba(129,140,248,.45);transform:translateY(-6px);box-shadow:0 28px 56px rgba(0,0,0,.5);}
+.nav-card-icon{font-size:2.8rem;line-height:1;}
+.nav-card-title{font-size:1.15rem;font-weight:700;}
+.nav-card-desc{font-size:.83rem;color:var(--muted);line-height:1.45;}
+.nav-card-stat{margin-top:8px;font-size:.78rem;font-weight:600;color:var(--primary);background:#818cf811;border:1px solid #818cf825;padding:5px 12px;border-radius:14px;align-self:flex-start;}
+#bg-input{display:none;}
+@media(max-width:580px){.cards{grid-template-columns:1fr;}.main-title{font-size:2.2rem;}.topbar{padding:14px 18px;}}
+</style>
+</head>
+<body id="body">
+<input type="file" id="bg-input" accept="image/*" onchange="pickBg(this)">
+<div class="overlay">
+  <div class="topbar">
+    <button class="bg-btn" id="bg-btn" onclick="document.getElementById('bg-input').click()"></button>
+    <button class="lang-btn" id="l-de" onclick="setLang('de')">DE</button>
+    <button class="lang-btn" id="l-en" onclick="setLang('en')">EN</button>
+  </div>
+  <div class="hero">
+    <div class="greeting" id="greeting"></div>
+    <div class="main-title">Daily Tracker</div>
+    <div class="hero-date" id="hdate"></div>
+    <div class="cards">
+      <a class="nav-card" href="daily-tracker.html?tab=todos">
+        <div class="nav-card-icon">✅</div>
+        <div class="nav-card-title" id="ct1"></div>
+        <div class="nav-card-desc" id="cd1"></div>
+        <div class="nav-card-stat" id="cs1"></div>
+      </a>
+      <a class="nav-card" href="daily-tracker.html?tab=sport">
+        <div class="nav-card-icon">🏃</div>
+        <div class="nav-card-title" id="ct2"></div>
+        <div class="nav-card-desc" id="cd2"></div>
+        <div class="nav-card-stat" id="cs2"></div>
+      </a>
+    </div>
+  </div>
+</div>
+<script>
+const BG_KEY='dt-bg',LANG_KEY='dt-lang',DATA_KEY='daily-tracker-v2';
+const T={
+  de:{greet:['Guten Morgen','Guten Tag','Guten Abend'],ct1:'Todos & Fortschritt',cd1:'Tägliche Aufgaben verwalten & tracken',ct2:'Sport Aktivitäten',cd2:'Training aufzeichnen & auswerten',s1:'Heute erledigt',s2:'Min. diese Woche',bg:'🖼 Hintergrundbild',days:['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'],months:['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember']},
+  en:{greet:['Good morning','Good afternoon','Good evening'],ct1:'Todos & Progress',cd1:'Manage & track your daily tasks',ct2:'Sports Activities',cd2:'Log workouts & view stats',s1:'Done today',s2:'Min. this week',bg:'🖼 Background',days:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],months:['January','February','March','April','May','June','July','August','September','October','November','December']}
+};
+let lang=localStorage.getItem(LANG_KEY)||'de';
+function setLang(l){lang=l;localStorage.setItem(LANG_KEY,l);render();}
+function todayStr(){return new Date().toISOString().split('T')[0];}
+function getStats(){
+  let d;try{d=JSON.parse(localStorage.getItem(DATA_KEY))||{todos:[],completions:{},activities:[]};}catch{d={todos:[],completions:{},activities:[]};}
+  const day=todayStr(),active=(d.todos||[]).filter(t=>t.active),comp=d.completions[day]||{};
+  let p=0;
+  if(active.length){
+    const sum=active.reduce((s,t)=>{const v=Array.isArray(comp)?(comp.includes(t.id)?1:0):(comp[t.id]||0);return s+(t.type==='count'?Math.min(v/(t.target||1),1):(v?1:0));},0);
+    p=Math.round(sum/active.length*100);
+  }
+  const wds=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-(6-i));return d.toISOString().split('T')[0];});
+  const wm=(d.activities||[]).filter(a=>wds.includes(a.date)).reduce((s,a)=>s+a.duration,0);
+  return{p,wm};
+}
+function render(){
+  const t=T[lang],now=new Date(),h=now.getHours();
+  document.getElementById('root').lang=lang;
+  document.getElementById('greeting').textContent=t.greet[h<12?0:h<18?1:2];
+  document.getElementById('hdate').textContent=`${t.days[now.getDay()]}, ${now.getDate()}. ${t.months[now.getMonth()]} ${now.getFullYear()}`;
+  document.getElementById('ct1').textContent=t.ct1;
+  document.getElementById('cd1').textContent=t.cd1;
+  document.getElementById('ct2').textContent=t.ct2;
+  document.getElementById('cd2').textContent=t.cd2;
+  document.getElementById('bg-btn').textContent=t.bg;
+  document.getElementById('l-de').classList.toggle('active',lang==='de');
+  document.getElementById('l-en').classList.toggle('active',lang==='en');
+  const s=getStats();
+  document.getElementById('cs1').textContent=`${t.s1}: ${s.p}%`;
+  document.getElementById('cs2').textContent=`${t.s2}: ${s.wm}`;
+}
+function pickBg(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{localStorage.setItem(BG_KEY,e.target.result);applyBg(e.target.result);};r.readAsDataURL(f);}
+function applyBg(url){document.getElementById('body').style.backgroundImage=`url(${url})`;}
+const savedBg=localStorage.getItem(BG_KEY);if(savedBg)applyBg(savedBg);
+render();
+</script>
+</body>
+</html>
