@@ -110,6 +110,12 @@ input[type=range]{width:100%;accent-color:var(--primary);cursor:pointer;}
 .cal-day.clickable{cursor:pointer;transition:filter .15s;}
 .cal-day.clickable:hover{filter:brightness(1.5);}
 .cal-dot{width:4px;height:4px;border-radius:50%;background:var(--primary);margin-top:2px;opacity:.8;}
+.cal-tip{position:fixed;z-index:400;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:11px 14px;font-size:.76rem;min-width:158px;max-width:215px;pointer-events:none;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:0 10px 36px rgba(0,0,0,.6);opacity:0;transition:opacity .16s;line-height:1.45;}
+.cal-tip.show{opacity:1;}
+.cal-tip-date{font-weight:700;color:var(--primary);margin-bottom:7px;font-size:.79rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.cal-tip-row{display:flex;align-items:center;gap:5px;margin-bottom:3px;color:var(--muted);}
+.cal-tip-row b{color:var(--text);}
+.cal-tip-div{margin-top:5px;border-top:1px solid var(--border);padding-top:5px;}
 .legend{display:flex;gap:12px;margin-top:12px;font-size:.75rem;color:var(--muted);flex-wrap:wrap;}
 .leg-dot{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:middle;margin-right:3px;}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;}
@@ -335,6 +341,7 @@ input[type=range]{width:100%;accent-color:var(--primary);cursor:pointer;}
 
 </div></div>
 <div class="toast" id="toast"></div>
+<div class="cal-tip" id="cal-tip"></div>
 <script>
 const TR={
 de:{
@@ -497,7 +504,8 @@ function renderManage(){const el=document.getElementById('todos-manage');if(!dat
 let chartP=null;
 function renderProgressChart(){const primary=getCSSVar('--primary');const grid=getCSSVar('--chart-grid');const days=dateRange(30),labels=days.map(d=>{const[,m,dy]=d.split('-');return`${dy}.${m}`;}),vals=days.map(d=>pct(d));const colors=vals.map(v=>v===100?'rgba(74,222,128,.9)':v>=80?'rgba(74,222,128,.65)':v>=50?'rgba(74,222,128,.4)':v>0?'rgba(74,222,128,.2)':'rgba(255,255,255,.04)');if(chartP){chartP.data.labels=labels;chartP.data.datasets[0].data=vals;chartP.data.datasets[0].backgroundColor=colors;chartP.update('none');return;}Chart.defaults.color=getCSSVar('--muted');chartP=new Chart(document.getElementById('progress-chart'),{type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:colors,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%',font:{size:10}},grid:{color:grid}},x:{ticks:{font:{size:9},maxRotation:45},grid:{display:false}}}}});}
 function renderWeek(){const days=dateRange(7),today=todayStr();document.getElementById('week-overview').innerHTML=days.map(d=>{const p=pct(d),h=Math.round(p*.6),dt=new Date(d),isT=d===today;return`<div class="wday${isT?' today':''}"><div class="wday-label">${t('calD')[(dt.getDay()+6)%7]}</div><div class="wday-bar">${p>0?`<span class="wday-pct">${p}%</span>`:''}<div class="wday-fill" style="height:${h}px"></div></div><div class="wday-date">${dt.getDate()}.${dt.getMonth()+1}</div></div>`;}).join('');}
-function renderMonthCal(){const now=new Date(),y=now.getFullYear(),m=now.getMonth();document.getElementById('h-month').textContent=`📅 ${t('months')[m]} ${y}`;const days=new Date(y,m+1,0).getDate(),first=(new Date(y,m,1).getDay()+6)%7,today=todayStr();let html='';for(let i=0;i<first;i++)html+='<div class="cal-day"></div>';for(let d=1;d<=days;d++){const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;const p=pct(ds),isFuture=ds>today,isToday=ds===today,isSel=ds===viewDate;let bg='rgba(255,255,255,.04)',fg=isFuture?'rgba(255,255,255,.15)':'rgba(255,255,255,.3)';let extra='';if(!isFuture&&p>0){if(p===100){bg='rgba(74,222,128,.9)';fg='#052e16';}else if(p>=80){bg='rgba(74,222,128,.65)';fg='#052e16';}else if(p>=50){bg='rgba(74,222,128,.4)';fg='#e8f5e9';}else{bg='rgba(74,222,128,.2)';fg='#a7f3d0';}}if(isToday)extra+='outline:2px solid var(--primary);outline-offset:1px;';if(isSel)extra+='box-shadow:inset 0 0 0 2.5px rgba(255,255,255,.7);';html+=`<div class="cal-day${!isFuture?' clickable':''}" style="background:${bg};color:${fg};${extra}" title="${fmtDate(ds)}${p>0?': '+p+'%':''}"${!isFuture?` onclick="selectTodoDay('${ds}')"`:''}><span class="cal-day-num">${d}</span>${p>0?`<span class="cal-day-pct">${p}%</span>`:''}</div>`;}document.getElementById('month-cal').innerHTML=html;}
+function renderMonthCal(){const now=new Date(),y=now.getFullYear(),m=now.getMonth();document.getElementById('h-month').textContent=`📅 ${t('months')[m]} ${y}`;const days=new Date(y,m+1,0).getDate(),first=(new Date(y,m,1).getDay()+6)%7,today=todayStr();let html='';for(let i=0;i<first;i++)html+='<div class="cal-day"></div>';for(let d=1;d<=days;d++){const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;const p=pct(ds),isFuture=ds>today,isToday=ds===today,isSel=ds===viewDate;let bg='rgba(255,255,255,.04)',fg=isFuture?'rgba(255,255,255,.15)':'rgba(255,255,255,.3)';let extra='';if(!isFuture&&p>0){if(p===100){bg='rgba(74,222,128,.9)';fg='#052e16';}else if(p>=80){bg='rgba(74,222,128,.65)';fg='#052e16';}else if(p>=50){bg='rgba(74,222,128,.4)';fg='#e8f5e9';}else{bg='rgba(74,222,128,.2)';fg='#a7f3d0';}}if(isToday)extra+='outline:2px solid var(--primary);outline-offset:1px;';if(isSel)extra+='box-shadow:inset 0 0 0 2.5px rgba(255,255,255,.7);';const todotip=!isFuture?` onmouseenter="showCalTip(event,'todos','${ds}')" onmouseleave="hideCalTip()"`:' onmouseenter="hideCalTip()"';
+html+=`<div class="cal-day${!isFuture?' clickable':''}" style="background:${bg};color:${fg};${extra}"${!isFuture?` onclick="selectTodoDay('${ds}')"`:''}${todotip}><span class="cal-day-num">${d}</span>${p>0?`<span class="cal-day-pct">${p}%</span>`:''}</div>`;}document.getElementById('month-cal').innerHTML=html;}
 function selectTodoDay(ds){if(ds>todayStr())return;viewDate=ds;renderTodayPanel();renderMonthCal();document.getElementById('today-todos').scrollIntoView({behavior:'smooth',block:'nearest'});}
 function renderTodos(){renderTodayPanel();renderManage();renderProgressChart();renderWeek();renderMonthCal();}
 
@@ -518,8 +526,60 @@ function renderActivities(){const el=document.getElementById('activities-list');
 function renderSportChart(){const primary=getCSSVar('--primary'),grid=getCSSVar('--chart-grid');const weeks=[];for(let i=7;i>=0;i--){const mon=new Date();mon.setDate(mon.getDate()-(mon.getDay()+6)%7-i*7);mon.setHours(0,0,0,0);const sun=new Date(mon);sun.setDate(sun.getDate()+6);weeks.push({label:`${mon.getDate()}.${mon.getMonth()+1}`,start:mon,end:sun});}const labels=weeks.map(w=>w.label),vals=weeks.map(w=>data.activities.filter(a=>{const d=new Date(a.date);return d>=w.start&&d<=w.end;}).reduce((s,a)=>s+a.duration,0));if(chartS){chartS.data.labels=labels;chartS.data.datasets[0].data=vals;chartS.update('none');return;}chartS=new Chart(document.getElementById('sport-chart'),{type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:primary+'22',borderColor:primary,borderWidth:2,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:0,ticks:{callback:v=>v+' Min',font:{size:10}},grid:{color:grid}},x:{ticks:{font:{size:11}},grid:{display:false}}}}});}
 function renderSport(){renderSportStats();renderActivities();renderSportChart();renderSportCal();}
 
+// ── Calendar tooltip ──────────────────────────────────────
+let tipTO=null;
+function showCalTip(e,tab,ds){
+  clearTimeout(tipTO);
+  const html=buildTipContent(tab,ds);
+  if(!html)return;
+  const tip=document.getElementById('cal-tip');
+  tip.innerHTML=html;
+  const rect=e.currentTarget.getBoundingClientRect();
+  const tw=190,th=150;
+  let left=rect.left+rect.width/2-tw/2,top=rect.top-th-10;
+  if(top<60)top=rect.bottom+10;
+  left=Math.max(8,Math.min(left,window.innerWidth-tw-8));
+  tip.style.left=left+'px';tip.style.top=top+'px';
+  tip.classList.add('show');
+}
+function hideCalTip(){tipTO=setTimeout(()=>document.getElementById('cal-tip').classList.remove('show'),80);}
+function buildTipContent(tab,ds){
+  const dt=new Date(ds+'T00:00:00');
+  const dlbl=`${t('calD')[(dt.getDay()+6)%7]}, ${dt.getDate()}.${dt.getMonth()+1}.${dt.getFullYear()}`;
+  let rows='';
+  if(tab==='todos'){
+    const active=data.todos.filter(x=>x.active);if(!active.length)return'';
+    const dn=active.filter(x=>x.type==='count'?getVal(ds,x.id)>=x.target:getVal(ds,x.id)===1).length;
+    rows+=`<div class="cal-tip-row">📋 <b>${dn}/${active.length}</b> (${pct(ds)}%)</div>`;
+    active.slice(0,7).forEach(td=>{
+      const done=td.type==='count'?getVal(ds,td.id)>=td.target:getVal(ds,td.id)===1;
+      rows+=`<div class="cal-tip-row"><span style="color:${td.color};font-size:.65rem">●</span><span style="flex:1;${done?'':'opacity:.4'}">${esc(td.name)}</span><span style="font-size:.8rem">${done?'✓':'–'}</span></div>`;
+    });
+    if(active.length>7)rows+=`<div class="cal-tip-row" style="opacity:.4">+${active.length-7}…</div>`;
+  }else if(tab==='sport'){
+    const acts=data.activities.filter(a=>a.date===ds);if(!acts.length)return'';
+    acts.slice(0,5).forEach(a=>{rows+=`<div class="cal-tip-row">${esc(a.emoji)} <b style="flex:1">${esc(a.type)}</b><span style="margin-left:auto">${a.duration} min</span></div>`;});
+    if(acts.length>5)rows+=`<div class="cal-tip-row" style="opacity:.4">+${acts.length-5}…</div>`;
+    const tot=acts.reduce((s,a)=>s+a.duration,0);
+    rows+=`<div class="cal-tip-row cal-tip-div">∑ <b>${tot} min</b>${acts.length>1?` (${acts.length} ${lang==='de'?'Einträge':'entries'})`:''}</div>`;
+  }else if(tab==='health'){
+    const en=[...healthData.entries].filter(e=>e.date===ds);if(!en.length)return'';
+    const e=en[en.length-1];
+    if(e.weight!=null)rows+=`<div class="cal-tip-row">⚖️ <b>${e.weight} kg</b></div>`;
+    if(e.hr!=null)rows+=`<div class="cal-tip-row">❤️ <b>${e.hr} bpm</b></div>`;
+    if(e.sleepH!=null)rows+=`<div class="cal-tip-row">😴 <b>${e.sleepH}h</b>${e.sleepScore?` · ${e.sleepScore}/10`:''}</div>`;
+    if(e.kcal!=null)rows+=`<div class="cal-tip-row">🔥 <b>${e.kcal} kcal</b></div>`;
+    if(e.recovery!=null)rows+=`<div class="cal-tip-row">💪 <b>${e.recovery}/10</b> ${lang==='de'?'Erholung':'Recovery'}</div>`;
+    const macros=[e.protein!=null?`P ${e.protein}g`:'',e.carbs!=null?`KH ${e.carbs}g`:'',e.fat!=null?`F ${e.fat}g`:''].filter(Boolean);
+    if(macros.length)rows+=`<div class="cal-tip-row" style="opacity:.6;font-size:.7rem">${macros.join(' · ')}</div>`;
+    if(en.length>1)rows+=`<div class="cal-tip-row" style="opacity:.4">${en.length} ${lang==='de'?'Einträge':'entries'}</div>`;
+  }
+  if(!rows)return'';
+  return`<div class="cal-tip-date">${dlbl}</div>${rows}`;
+}
+
 // ── Shared calendar widget ─────────────────────────────────
-function calWidget(gridId,titleId,year,month,selected,markFn,clickFn){
+function calWidget(gridId,titleId,year,month,selected,markFn,clickFn,tab){
   const today=todayStr(),fd=(new Date(year,month,1).getDay()+6)%7,dm=new Date(year,month+1,0).getDate();
   const el=document.getElementById(titleId);if(el)el.textContent=`${t('months')[month]} ${year}`;
   let h='';
@@ -532,7 +592,8 @@ function calWidget(gridId,titleId,year,month,selected,markFn,clickFn){
     else if(mark)bg='rgba(255,255,255,.1)';
     if(isT&&!isSel)extra='outline:2px solid var(--primary);outline-offset:1px;';
     const click=!isF&&clickFn?` onclick="${clickFn}('${ds}')"`:'';
-    h+=`<div class="cal-day${!isF?' clickable':''}" style="background:${bg};color:${clr};${extra}"${click} title="${ds}"><span class="cal-day-num">${d}</span>${mark&&!isSel?'<span class="cal-dot"></span>':''}</div>`;
+    const tip=tab&&!isF?` onmouseenter="showCalTip(event,'${tab}','${ds}')" onmouseleave="hideCalTip()"`:' onmouseenter="hideCalTip()"';
+    h+=`<div class="cal-day${!isF?' clickable':''}" style="background:${bg};color:${clr};${extra}"${click}${tip}><span class="cal-day-num">${d}</span>${mark&&!isSel?'<span class="cal-dot"></span>':''}</div>`;
   }
   document.getElementById(gridId).innerHTML=h;
 }
@@ -541,7 +602,7 @@ function calWidget(gridId,titleId,year,month,selected,markFn,clickFn){
 function renderSportCal(){
   const sel=document.getElementById('sport-date')?.value||todayStr();
   const actDates=new Set(data.activities.map(a=>a.date));
-  calWidget('sport-cal-grid','sport-cal-title',sportCY,sportCM,sel,ds=>actDates.has(ds)?1:0,'pickSportDay');
+  calWidget('sport-cal-grid','sport-cal-title',sportCY,sportCM,sel,ds=>actDates.has(ds)?1:0,'pickSportDay','sport');
 }
 function sportCalNav(d){const dt=new Date(sportCY,sportCM+d);sportCY=dt.getFullYear();sportCM=dt.getMonth();renderSportCal();}
 function pickSportDay(ds){document.getElementById('sport-date').value=ds;renderSportCal();}
@@ -550,7 +611,7 @@ function pickSportDay(ds){document.getElementById('sport-date').value=ds;renderS
 function renderHealthCal(){
   const sel=document.getElementById('h-date')?.value||todayStr();
   const entryDates=new Set(healthData.entries.map(e=>e.date));
-  calWidget('health-cal-grid','health-cal-title',healthCY,healthCM,sel,ds=>entryDates.has(ds)?1:0,'pickHealthDay');
+  calWidget('health-cal-grid','health-cal-title',healthCY,healthCM,sel,ds=>entryDates.has(ds)?1:0,'pickHealthDay','health');
 }
 function healthCalNav(d){const dt=new Date(healthCY,healthCM+d);healthCY=dt.getFullYear();healthCM=dt.getMonth();renderHealthCal();}
 function pickHealthDay(ds){
