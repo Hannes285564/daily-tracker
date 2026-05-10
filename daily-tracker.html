@@ -183,7 +183,16 @@ input[type=range]{width:100%;accent-color:var(--primary);cursor:pointer;}
         <div id="target-row" class="form-row" style="display:none"><label class="form-label" id="lbl-target"></label><input type="number" id="new-todo-target" min="1" max="999"></div>
         <button class="btn btn-primary" id="add-btn" onclick="addTodo()" style="width:100%"></button>
       </div>
-      <div class="card"><h2 id="h-today"></h2>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <h2 id="h-today" style="margin-bottom:0"></h2>
+          <div style="display:flex;align-items:center;gap:4px">
+            <button class="btn-icon" onclick="navDay(-1)" style="font-size:1.1rem;padding:4px 8px">‹</button>
+            <span id="view-date-lbl" style="font-size:.75rem;color:var(--muted);min-width:72px;text-align:center"></span>
+            <button class="btn-icon" id="nav-next-btn" onclick="navDay(1)" style="font-size:1.1rem;padding:4px 8px">›</button>
+            <button class="btn" id="today-jump-btn" onclick="jumpToday()" style="display:none;font-size:.72rem;padding:3px 9px;border:1.5px solid var(--primary);color:var(--primary);background:none;border-radius:6px;font-family:inherit"></button>
+          </div>
+        </div>
         <div class="prog-wrap"><div class="prog-info"><span id="lbl-prog"></span><span id="today-pct">0%</span></div><div class="prog-bg"><div class="prog-fill" id="today-bar" style="width:0%"></div></div></div>
         <div id="today-todos"></div>
       </div>
@@ -214,7 +223,10 @@ input[type=range]{width:100%;accent-color:var(--primary);cursor:pointer;}
         <select id="sport-intensity"><option value="low" id="int-low"></option><option value="medium" id="int-med" selected></option><option value="high" id="int-high"></option></select>
       </div>
       <div class="form-row"><label class="form-label" id="lbl-snote"></label><textarea id="sport-notes" rows="2" style="resize:none"></textarea></div>
-      <button class="btn btn-primary" id="save-btn" onclick="addActivity()" style="width:100%"></button>
+      <div style="display:flex;gap:8px">
+        <button class="btn" id="sport-cancel-btn" onclick="cancelEditActivity()" style="display:none;flex:1;border:1.5px solid var(--border);color:var(--muted);background:transparent;font-family:inherit"></button>
+        <button class="btn btn-primary" id="save-btn" onclick="addActivity()" style="flex:1"></button>
+      </div>
     </div>
     <div>
       <div class="grid-3" id="sport-stats" style="margin-bottom:16px"></div>
@@ -244,8 +256,16 @@ input[type=range]{width:100%;accent-color:var(--primary);cursor:pointer;}
         <div><label class="form-label" id="lbl-hkcal"></label><input type="number" id="h-kcal" min="0" placeholder="2000"></div>
         <div><label class="form-label" id="lbl-hsteps"></label><input type="number" id="h-steps" min="0" placeholder="8000"></div>
       </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+        <div><label class="form-label" id="lbl-hprot"></label><input type="number" id="h-protein" min="0" placeholder="150"></div>
+        <div><label class="form-label" id="lbl-hcarbs"></label><input type="number" id="h-carbs" min="0" placeholder="200"></div>
+        <div><label class="form-label" id="lbl-hfat"></label><input type="number" id="h-fat" min="0" placeholder="60"></div>
+      </div>
       <div class="form-row"><label class="form-label" id="lbl-hnotes"></label><textarea id="h-notes" rows="2" style="resize:none"></textarea></div>
-      <button class="btn btn-primary" id="h-add-btn" onclick="addHealthEntry()" style="width:100%"></button>
+      <div style="display:flex;gap:8px">
+        <button class="btn" id="h-cancel-btn" onclick="cancelEditHealth()" style="display:none;flex:1;border:1.5px solid var(--border);color:var(--muted);background:transparent;font-family:inherit"></button>
+        <button class="btn btn-primary" id="h-add-btn" onclick="addHealthEntry()" style="flex:1"></button>
+      </div>
     </div>
     <div class="card">
       <h2 id="h-calc-title"></h2>
@@ -307,7 +327,9 @@ de:{
   resBMR:'Grundumsatz',resTDEE:'Gesamtumsatz',resTarget:'Kalorientziel',resMacros:'Empfohlene Makros',
   hWChart:'⚖️ Gewichtsverlauf',hKChart:'🔥 Kalorienverlauf',hSlChart:'😴 Schlafverlauf',hHRChart:'❤️ Pulsverlauf',hHLog:'📋 Protokoll',
   eHealth:'Noch keine Einträge. Trage heute deine ersten Werte ein!',
-  hStatW:'Aktuelles Gewicht',hStatK:'Kalorientziel',hStatSl:'Ø Schlaf (7 Tage)',hStatHR:'Ø Ruhepuls (7 Tage)',hDeleted:'Eintrag gelöscht',carbs:'Kohlenhydrate'
+  hStatW:'Aktuelles Gewicht',hStatK:'Kalorientziel',hStatSl:'Ø Schlaf (7 Tage)',hStatHR:'Ø Ruhepuls (7 Tage)',hDeleted:'Eintrag gelöscht',carbs:'Kohlenhydrate',
+  fat:'Fett',hprot:'Eiweiß (g)',hcarbsi:'KH (g)',hfati:'Fett (g)',
+  updEntry:'Aktualisieren',editEntryH:'✏️ Eintrag bearbeiten',updAct:'Aktualisieren',editActH:'✏️ Aktivität bearbeiten',cancelEdit:'Abbrechen',todayBtn:'Heute',hUpdated:'Eintrag aktualisiert ✓',aUpdated:'Aktivität aktualisiert ✓'
 },
 en:{
   back:'← Dashboard',tbTodos:'✅ Todos',tbSport:'🏃 Sport',tbHealth:'❤️ Health',
@@ -328,7 +350,9 @@ en:{
   resBMR:'Basal metabolic rate',resTDEE:'Total daily expenditure',resTarget:'Calorie target',resMacros:'Recommended macros',
   hWChart:'⚖️ Weight trend',hKChart:'🔥 Calorie log',hSlChart:'😴 Sleep trend',hHRChart:'❤️ Heart rate trend',hHLog:'📋 Health log',
   eHealth:'No entries yet. Log your first values today!',
-  hStatW:'Current weight',hStatK:'Calorie target',hStatSl:'Avg sleep (7 days)',hStatHR:'Avg resting HR (7 days)',hDeleted:'Entry deleted',carbs:'Carbs'
+  hStatW:'Current weight',hStatK:'Calorie target',hStatSl:'Avg sleep (7 days)',hStatHR:'Avg resting HR (7 days)',hDeleted:'Entry deleted',carbs:'Carbs',
+  fat:'Fat',hprot:'Protein (g)',hcarbsi:'Carbs (g)',hfati:'Fat (g)',
+  updEntry:'Update',editEntryH:'✏️ Edit entry',updAct:'Update',editActH:'✏️ Edit activity',cancelEdit:'Cancel',todayBtn:'Today',hUpdated:'Entry updated ✓',aUpdated:'Activity updated ✓'
 }
 };
 const THEME_KEY='dt-theme',LANG_KEY='dt-lang',BG_KEY='dt-bg',DATA_KEY='daily-tracker-v2',HEALTH_KEY='daily-tracker-health';
@@ -338,6 +362,7 @@ let lang=localStorage.getItem(LANG_KEY)||'de';
 function t(k){return TR[lang][k]||k;}
 
 let calcGender='male',calcGoalType='maintain';
+let viewDate='',editActivityId=null,editHealthId=null;
 function setCalcGender(g){calcGender=g;document.getElementById('calc-male').classList.toggle('active',g==='male');document.getElementById('calc-female').classList.toggle('active',g==='female');}
 function setCalcGoalType(g){calcGoalType=g;['fat','maintain','muscle','athletic'].forEach(x=>document.getElementById('gt-'+x).classList.toggle('active',x===g));}
 
@@ -360,6 +385,7 @@ function applyLang(){
   s('h-new-todo',t('hNew'));ph('new-todo-name',t('tHolder'));s('lbl-type',t('lType'));s('type-bool',t('tBool'));s('type-count',t('tCount'));s('lbl-target',t('lTarget'));ph('new-todo-target',t('tHolder2'));s('add-btn',t('addBtn'));s('lbl-prog',t('lProg'));s('h-chart',t('hChart'));s('h-week',t('hWeek'));s('h-manage',t('hManage'));
   s('h-add-act',t('hAddAct'));s('lbl-stype',t('lSType'));s('lbl-scustom',t('lSCustom'));ph('sport-custom',t('sHolder'));s('lbl-sdate',t('lDate'));s('lbl-sdur',t('lDur'));ph('sport-duration',t('durHolder'));s('lbl-sint',t('lInt'));s('lbl-snote',t('lNote'));ph('sport-notes',t('noteHolder'));s('save-btn',t('saveBtn'));s('h-schart',t('hSChart'));s('h-ahist',t('hAHist'));s('bg-btn',t('bgBtn'));s('int-low',t('iLow'));s('int-med',t('iMed'));s('int-high',t('iHigh'));
   s('h-log-title',t('hLogH'));s('lbl-hdate',t('lblHDate'));s('lbl-hweight',t('lblHWeight'));s('lbl-hr',t('lblHR'));s('lbl-sleeph',t('lblSleepH'));s('lbl-sleepq',t('lblSleepQ'));s('lbl-recov',t('lblRecov'));s('lbl-hkcal',t('lblHKcal'));s('lbl-hsteps',t('lblHSteps'));s('lbl-hnotes',t('lblHNotes'));s('h-add-btn',t('hSaveH'));
+  s('lbl-hprot',t('hprot'));s('lbl-hcarbs',t('hcarbsi'));s('lbl-hfat',t('hfati'));s('h-cancel-btn',t('cancelEdit'));s('sport-cancel-btn',t('cancelEdit'));s('today-jump-btn',t('todayBtn'));
   s('h-calc-title',t('hCalcT'));s('lbl-cgender',t('calcGender'));s('calc-male',t('calcMale'));s('calc-female',t('calcFemale'));s('lbl-cage',t('calcAge'));s('lbl-cheight',t('calcHeight'));s('lbl-ccw',t('calcCW'));s('lbl-cact',t('calcAct'));s('lbl-cgoal',t('calcGoalR'));s('lbl-cgoalt',t('calcGoalT'));s('gt-fat',t('gtFat'));s('gt-maintain',t('gtMaintain'));s('gt-muscle',t('gtMuscle'));s('gt-athletic',t('gtAthletic'));s('h-calc-btn',t('calcBtn'));
   s('h-wchart',t('hWChart'));s('h-kchart',t('hKChart'));s('h-slchart',t('hSlChart'));s('h-hrchart',t('hHRChart'));s('h-hlog-title',t('hHLog'));
   document.getElementById('l-de').classList.toggle('active',lang==='de');document.getElementById('l-en').classList.toggle('active',lang==='en');
@@ -404,21 +430,27 @@ function switchTab(name,btn){
   document.getElementById('tab-'+name).classList.add('active');btn.classList.add('active');
   if(name==='todos')renderTodos();else if(name==='sport')renderSport();else renderHealth();
 }
+function navDay(d){const dt=new Date(viewDate+'T00:00:00');dt.setDate(dt.getDate()+d);const nd=dt.toISOString().split('T')[0];if(nd>todayStr())return;viewDate=nd;renderTodayPanel();}
+function jumpToday(){viewDate=todayStr();renderTodayPanel();}
 
 let newType='boolean';
 function setTodoType(type){newType=type;document.getElementById('type-bool').classList.toggle('active',type==='boolean');document.getElementById('type-count').classList.toggle('active',type==='count');document.getElementById('target-row').style.display=type==='count'?'block':'none';}
 
 function addTodo(){const name=document.getElementById('new-todo-name').value.trim();const color=document.getElementById('new-todo-color').value;const target=newType==='count'?(parseInt(document.getElementById('new-todo-target').value)||10):1;if(!name){toast(lang==='de'?'Bitte Namen eingeben!':'Please enter a name!');return;}data.todos.push({id:uid(),name,color,type:newType,target,active:true});save();document.getElementById('new-todo-name').value='';document.getElementById('new-todo-target').value='';renderTodos();toast('"'+name+'"'+(lang==='de'?' hinzugefügt ✓':' added ✓'));}
 function deleteTodo(id){data.todos=data.todos.filter(x=>x.id!==id);Object.values(data.completions).forEach(o=>{if(typeof o==='object'&&!Array.isArray(o))delete o[id];});save();renderTodos();toast(t('tDel'));}
-function toggleBool(id){setVal(todayStr(),id,getVal(todayStr(),id)?0:1);save();refreshCharts();renderTodayPanel();}
-function sliderInput(id,raw){const val=parseInt(raw)||0,td=data.todos.find(x=>x.id===id);if(!td)return;if(!data.completions[todayStr()])data.completions[todayStr()]={};if(val===0)delete data.completions[todayStr()][id];else data.completions[todayStr()][id]=val;const cv=document.getElementById('cv-'+id);if(cv)cv.textContent=val;const cf=document.getElementById('cf-'+id);if(cf)cf.style.width=Math.min(val/td.target*100,100)+'%';const item=document.getElementById('item-'+id);if(item)item.classList.toggle('done',val>=td.target);refreshTodayProgress();}
-function sliderChange(id,raw){setVal(todayStr(),id,parseInt(raw)||0);save();refreshCharts();}
-function refreshTodayProgress(){const day=todayStr(),active=data.todos.filter(x=>x.active);const dn=active.filter(x=>x.type==='count'?getVal(day,x.id)>=x.target:getVal(day,x.id)===1).length;const p=active.length?Math.round(active.reduce((s,x)=>s+ratio(day,x),0)/active.length*100):0;document.getElementById('today-pct').textContent=p+'%';document.getElementById('today-bar').style.width=p+'%';document.getElementById('h-today').innerHTML=`${t('hToday')} — <span>${dn}</span>/<span>${active.length}</span>`;}
+function toggleBool(id){setVal(viewDate,id,getVal(viewDate,id)?0:1);save();refreshCharts();renderTodayPanel();}
+function sliderInput(id,raw){const val=parseInt(raw)||0,td=data.todos.find(x=>x.id===id);if(!td)return;if(!data.completions[viewDate])data.completions[viewDate]={};if(val===0)delete data.completions[viewDate][id];else data.completions[viewDate][id]=val;const cv=document.getElementById('cv-'+id);if(cv)cv.textContent=val;const cf=document.getElementById('cf-'+id);if(cf)cf.style.width=Math.min(val/td.target*100,100)+'%';const item=document.getElementById('item-'+id);if(item)item.classList.toggle('done',val>=td.target);refreshTodayProgress();}
+function sliderChange(id,raw){setVal(viewDate,id,parseInt(raw)||0);save();refreshCharts();}
+function refreshTodayProgress(){const day=viewDate,active=data.todos.filter(x=>x.active);const dn=active.filter(x=>x.type==='count'?getVal(day,x.id)>=x.target:getVal(day,x.id)===1).length;const p=active.length?Math.round(active.reduce((s,x)=>s+ratio(day,x),0)/active.length*100):0;document.getElementById('today-pct').textContent=p+'%';document.getElementById('today-bar').style.width=p+'%';document.getElementById('h-today').innerHTML=`${t('hToday')} — <span>${dn}</span>/<span>${active.length}</span>`;}
 function refreshCharts(){renderProgressChart();renderWeek();renderMonthCal();}
 
 function renderTodayPanel(){
-  const day=todayStr(),active=data.todos.filter(x=>x.active);const dn=active.filter(x=>x.type==='count'?getVal(day,x.id)>=x.target:getVal(day,x.id)===1).length;const p=active.length?Math.round(active.reduce((s,x)=>s+ratio(day,x),0)/active.length*100):0;
+  const day=viewDate,isToday=day===todayStr(),active=data.todos.filter(x=>x.active);const dn=active.filter(x=>x.type==='count'?getVal(day,x.id)>=x.target:getVal(day,x.id)===1).length;const p=active.length?Math.round(active.reduce((s,x)=>s+ratio(day,x),0)/active.length*100):0;
   document.getElementById('h-today').innerHTML=`${t('hToday')} — <span>${dn}</span>/<span>${active.length}</span>`;document.getElementById('today-pct').textContent=p+'%';document.getElementById('today-bar').style.width=p+'%';
+  const dt=new Date(day+'T00:00:00');const dlbl=isToday?(lang==='de'?'Heute':'Today'):`${t('calD')[(dt.getDay()+6)%7]} ${dt.getDate()}.${dt.getMonth()+1}.`;
+  const vlbl=document.getElementById('view-date-lbl');if(vlbl)vlbl.textContent=dlbl;
+  const nb=document.getElementById('nav-next-btn');if(nb)nb.style.opacity=isToday?'.3':'1';
+  const tb=document.getElementById('today-jump-btn');if(tb)tb.style.display=isToday?'none':'';
   const list=document.getElementById('today-todos');
   if(!active.length){list.innerHTML=`<div class="empty"><div class="ico">📝</div>${t('eT')}</div>`;return;}
   list.innerHTML=active.map(td=>{const val=getVal(day,td.id);if(td.type==='count'){const done=val>=td.target,fill=Math.min(Math.round(val/td.target*100),100);return`<div class="todo-item${done?' done':''}" id="item-${td.id}" style="align-items:flex-start"><div class="todo-dot" style="background:${td.color};margin-top:3px;flex-shrink:0"></div><div class="count-body"><div class="todo-name">${esc(td.name)}</div><div class="count-row"><input type="range" min="0" max="${td.target}" value="${val}" oninput="sliderInput('${td.id}',this.value)" onchange="sliderChange('${td.id}',this.value)"><span class="count-val" id="cv-${td.id}">${val}</span><span class="count-max">/ ${td.target}</span></div><div class="mini-bar"><div class="mini-fill" id="cf-${td.id}" style="width:${fill}%;background:${td.color}"></div></div></div><button class="btn-icon del-btn" onclick="deleteTodo('${td.id}')">🗑️</button></div>`;}const done=val===1;return`<div class="todo-item${done?' done':''}"><div class="todo-dot" style="background:${td.color}"></div><input class="todo-cb" type="checkbox"${done?' checked':''} onchange="toggleBool('${td.id}')"><span class="todo-name">${esc(td.name)}</span><button class="btn-icon del-btn" onclick="deleteTodo('${td.id}')">🗑️</button></div>`;}).join('');
@@ -432,27 +464,38 @@ function renderMonthCal(){const now=new Date(),y=now.getFullYear(),m=now.getMont
 function renderTodos(){renderTodayPanel();renderManage();renderProgressChart();renderWeek();renderMonthCal();}
 
 let chartS=null;
-function addActivity(){const raw=document.getElementById('sport-type').value;const custom=document.getElementById('sport-custom').value.trim();const type=custom||raw.replace(/^[\p{Emoji}\s]+/u,'').trim();const emoji=custom?'💪':(raw.match(/^([\p{Emoji}])/u)?.[0]||'💪');const date=document.getElementById('sport-date').value;const duration=parseInt(document.getElementById('sport-duration').value)||0;const intensity=document.getElementById('sport-intensity').value;const notes=document.getElementById('sport-notes').value.trim();if(!date){toast(lang==='de'?'Bitte Datum!':'Please select a date!');return;}if(duration<=0){toast(lang==='de'?'Bitte Dauer!':'Please enter duration!');return;}data.activities.push({id:uid(),type,emoji,date,duration,intensity,notes});save();document.getElementById('sport-custom').value='';document.getElementById('sport-duration').value='';document.getElementById('sport-notes').value='';renderSport();toast(type+(lang==='de'?' gespeichert ✓':' saved ✓'));}
-function deleteActivity(id){data.activities=data.activities.filter(a=>a.id!==id);save();renderSport();toast(t('aDel'));}
+function _sportFields(){const raw=document.getElementById('sport-type').value;const custom=document.getElementById('sport-custom').value.trim();const type=custom||raw.replace(/^[\p{Emoji}\s]+/u,'').trim();const emoji=custom?'💪':(raw.match(/^([\p{Emoji}])/u)?.[0]||'💪');const date=document.getElementById('sport-date').value;const duration=parseInt(document.getElementById('sport-duration').value)||0;const intensity=document.getElementById('sport-intensity').value;const notes=document.getElementById('sport-notes').value.trim();return{type,emoji,date,duration,intensity,notes};}
+function _clearSportForm(){document.getElementById('sport-custom').value='';document.getElementById('sport-duration').value='';document.getElementById('sport-notes').value='';}
+function addActivity(){
+  if(editActivityId){updateActivity();return;}
+  const f=_sportFields();if(!f.date){toast(lang==='de'?'Bitte Datum!':'Please select a date!');return;}if(f.duration<=0){toast(lang==='de'?'Bitte Dauer!':'Please enter duration!');return;}
+  data.activities.push({id:uid(),...f});save();_clearSportForm();renderSport();toast(f.type+(lang==='de'?' gespeichert ✓':' saved ✓'));
+}
+function editActivity(id){const a=data.activities.find(x=>x.id===id);if(!a)return;editActivityId=id;document.getElementById('sport-custom').value=a.type;document.getElementById('sport-date').value=a.date;document.getElementById('sport-duration').value=a.duration;document.getElementById('sport-intensity').value=a.intensity;document.getElementById('sport-notes').value=a.notes||'';document.getElementById('sport-cancel-btn').style.display='';document.getElementById('save-btn').textContent=t('updAct');document.getElementById('h-add-act').textContent=t('editActH');document.getElementById('tab-sport').querySelector('.card').scrollIntoView({behavior:'smooth',block:'nearest'});}
+function updateActivity(){const f=_sportFields();if(!f.date||f.duration<=0){toast(lang==='de'?'Bitte Datum & Dauer!':'Please add date & duration!');return;}const idx=data.activities.findIndex(a=>a.id===editActivityId);if(idx>=0)data.activities[idx]={...data.activities[idx],...f};save();cancelEditActivity();renderSport();toast(f.type+' '+(lang==='de'?'aktualisiert ✓':'updated ✓'));}
+function cancelEditActivity(){editActivityId=null;_clearSportForm();document.getElementById('sport-cancel-btn').style.display='none';document.getElementById('save-btn').textContent=t('saveBtn');document.getElementById('h-add-act').textContent=t('hAddAct');}
+function deleteActivity(id){if(editActivityId===id)cancelEditActivity();data.activities=data.activities.filter(a=>a.id!==id);save();renderSport();toast(t('aDel'));}
 function renderSportStats(){const acts=data.activities,tm=acts.reduce((s,a)=>s+a.duration,0);const wds=dateRange(7),wm=acts.filter(a=>wds.includes(a.date)).reduce((s,a)=>s+a.duration,0);const counts={};acts.forEach(a=>counts[a.type]=(counts[a.type]||0)+1);const top=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];document.getElementById('sport-stats').innerHTML=`<div class="stat-card"><div class="stat-num">${(tm/60).toFixed(1)}</div><div class="stat-lbl">${t('sTotal')}</div></div><div class="stat-card"><div class="stat-num">${wm}</div><div class="stat-lbl">${t('sWeek')}</div></div><div class="stat-card"><div class="stat-num">${top?(acts.find(a=>a.type===top[0])?.emoji||'💪'):'—'}</div><div class="stat-lbl">${top?esc(top[0]):t('sNone')}</div></div>`;}
-function renderActivities(){const el=document.getElementById('activities-list');const sorted=[...data.activities].sort((a,b)=>b.date.localeCompare(a.date));if(!sorted.length){el.innerHTML=`<div class="empty"><div class="ico">🏃</div>${t('eA')}</div>`;return;}const iL={low:t('iLS'),medium:t('iMS'),high:t('iHS')},iC={low:'badge-low',medium:'badge-medium',high:'badge-high'};el.innerHTML=sorted.map(a=>{const h=Math.floor(a.duration/60),mn=a.duration%60,dur=h>0?`${h}h ${mn}min`:`${mn}min`;return`<div class="act-item"><div class="act-icon">${esc(a.emoji)}</div><div class="act-info"><div class="act-name">${esc(a.type)} <span class="badge ${iC[a.intensity]}">${iL[a.intensity]}</span></div><div class="act-meta">${fmtDate(a.date)} · ${dur}${a.notes?' · '+esc(a.notes):''}</div></div><button class="btn-icon" onclick="deleteActivity('${a.id}')">🗑️</button></div>`;}).join('');}
+function renderActivities(){const el=document.getElementById('activities-list');const sorted=[...data.activities].sort((a,b)=>b.date.localeCompare(a.date));if(!sorted.length){el.innerHTML=`<div class="empty"><div class="ico">🏃</div>${t('eA')}</div>`;return;}const iL={low:t('iLS'),medium:t('iMS'),high:t('iHS')},iC={low:'badge-low',medium:'badge-medium',high:'badge-high'};el.innerHTML=sorted.map(a=>{const h=Math.floor(a.duration/60),mn=a.duration%60,dur=h>0?`${h}h ${mn}min`:`${mn}min`;return`<div class="act-item"><div class="act-icon">${esc(a.emoji)}</div><div class="act-info"><div class="act-name">${esc(a.type)} <span class="badge ${iC[a.intensity]}">${iL[a.intensity]}</span></div><div class="act-meta">${fmtDate(a.date)} · ${dur}${a.notes?' · '+esc(a.notes):''}</div></div><button class="btn-icon" onclick="editActivity('${a.id}')" title="${lang==='de'?'Bearbeiten':'Edit'}">✏️</button><button class="btn-icon" onclick="deleteActivity('${a.id}')">🗑️</button></div>`;}).join('');}
 function renderSportChart(){const primary=getCSSVar('--primary'),grid=getCSSVar('--chart-grid');const weeks=[];for(let i=7;i>=0;i--){const mon=new Date();mon.setDate(mon.getDate()-(mon.getDay()+6)%7-i*7);mon.setHours(0,0,0,0);const sun=new Date(mon);sun.setDate(sun.getDate()+6);weeks.push({label:`${mon.getDate()}.${mon.getMonth()+1}`,start:mon,end:sun});}const labels=weeks.map(w=>w.label),vals=weeks.map(w=>data.activities.filter(a=>{const d=new Date(a.date);return d>=w.start&&d<=w.end;}).reduce((s,a)=>s+a.duration,0));if(chartS){chartS.data.labels=labels;chartS.data.datasets[0].data=vals;chartS.update('none');return;}chartS=new Chart(document.getElementById('sport-chart'),{type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:primary+'22',borderColor:primary,borderWidth:2,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:0,ticks:{callback:v=>v+' Min',font:{size:10}},grid:{color:grid}},x:{ticks:{font:{size:11}},grid:{display:false}}}}});}
 function renderSport(){renderSportStats();renderActivities();renderSportChart();}
 
 // ── Health ────────────────────────────────────────────────
 let chartW=null,chartKH=null,chartSL=null,chartHR=null;
+function _readHealthForm(){return{date:document.getElementById('h-date').value,weight:pNum(document.getElementById('h-weight').value),hr:pNum(document.getElementById('h-hr').value),sleepH:pNum(document.getElementById('h-sleeph').value),sleepScore:pNum(document.getElementById('h-sleepq').value),recovery:pNum(document.getElementById('h-recov').value),kcal:pNum(document.getElementById('h-kcal').value),steps:pNum(document.getElementById('h-steps').value),protein:pNum(document.getElementById('h-protein').value),carbs:pNum(document.getElementById('h-carbs').value),fat:pNum(document.getElementById('h-fat').value),notes:document.getElementById('h-notes').value.trim()};}
+function _clearHealthForm(){['h-weight','h-hr','h-sleeph','h-sleepq','h-recov','h-kcal','h-steps','h-protein','h-carbs','h-fat','h-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('h-date').value=todayStr();}
 function addHealthEntry(){
-  const date=document.getElementById('h-date').value;
-  const weight=pNum(document.getElementById('h-weight').value),hr=pNum(document.getElementById('h-hr').value),sleepH=pNum(document.getElementById('h-sleeph').value),sleepScore=pNum(document.getElementById('h-sleepq').value),recovery=pNum(document.getElementById('h-recov').value),kcal=pNum(document.getElementById('h-kcal').value),steps=pNum(document.getElementById('h-steps').value);
-  const notes=document.getElementById('h-notes').value.trim();
-  if(!date){toast(lang==='de'?'Bitte Datum wählen!':'Please select a date!');return;}
-  if([weight,hr,sleepH,sleepScore,recovery,kcal,steps].every(v=>v===null)&&!notes){toast(lang==='de'?'Bitte mindestens einen Wert eingeben!':'Please enter at least one value!');return;}
-  healthData.entries.push({id:uid(),date,weight,hr,sleepH,sleepScore,recovery,kcal,steps,notes});
-  saveHealth();
-  ['h-weight','h-hr','h-sleeph','h-sleepq','h-recov','h-kcal','h-steps','h-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  renderHealth();toast(lang==='de'?'Eintrag gespeichert ✓':'Entry saved ✓');
+  if(editHealthId){updateHealthEntry();return;}
+  const f=_readHealthForm();
+  if(!f.date){toast(lang==='de'?'Bitte Datum wählen!':'Please select a date!');return;}
+  if([f.weight,f.hr,f.sleepH,f.sleepScore,f.recovery,f.kcal,f.steps,f.protein,f.carbs,f.fat].every(v=>v===null)&&!f.notes){toast(lang==='de'?'Bitte mindestens einen Wert eingeben!':'Please enter at least one value!');return;}
+  healthData.entries.push({id:uid(),...f});
+  saveHealth();_clearHealthForm();renderHealth();toast(lang==='de'?'Eintrag gespeichert ✓':'Entry saved ✓');
 }
-function deleteHealthEntry(id){healthData.entries=healthData.entries.filter(e=>e.id!==id);saveHealth();renderHealth();toast(t('hDeleted'));}
+function editHealthEntry(id){const e=healthData.entries.find(x=>x.id===id);if(!e)return;editHealthId=id;document.getElementById('h-date').value=e.date;document.getElementById('h-weight').value=e.weight??'';document.getElementById('h-hr').value=e.hr??'';document.getElementById('h-sleeph').value=e.sleepH??'';document.getElementById('h-sleepq').value=e.sleepScore??'';document.getElementById('h-recov').value=e.recovery??'';document.getElementById('h-kcal').value=e.kcal??'';document.getElementById('h-steps').value=e.steps??'';document.getElementById('h-protein').value=e.protein??'';document.getElementById('h-carbs').value=e.carbs??'';document.getElementById('h-fat').value=e.fat??'';document.getElementById('h-notes').value=e.notes||'';document.getElementById('h-cancel-btn').style.display='';document.getElementById('h-add-btn').textContent=t('updEntry');document.getElementById('h-log-title').textContent=t('editEntryH');document.getElementById('h-date').scrollIntoView({behavior:'smooth',block:'center'});}
+function updateHealthEntry(){const f=_readHealthForm();if(!f.date){toast(lang==='de'?'Bitte Datum wählen!':'Please select a date!');return;}const idx=healthData.entries.findIndex(e=>e.id===editHealthId);if(idx>=0)healthData.entries[idx]={...healthData.entries[idx],...f};saveHealth();cancelEditHealth();renderHealth();toast(t('hUpdated'));}
+function cancelEditHealth(){editHealthId=null;_clearHealthForm();document.getElementById('h-cancel-btn').style.display='none';document.getElementById('h-add-btn').textContent=t('hSaveH');document.getElementById('h-log-title').textContent=t('hLogH');}
+function deleteHealthEntry(id){if(editHealthId===id)cancelEditHealth();healthData.entries=healthData.entries.filter(e=>e.id!==id);saveHealth();renderHealth();toast(t('hDeleted'));}
 
 function calculateTDEE(){
   const age=parseInt(document.getElementById('calc-age').value),height=parseFloat(document.getElementById('calc-height').value),weight=parseFloat(document.getElementById('calc-cw').value);
@@ -474,7 +517,7 @@ function calculateTDEE(){
   const pp=Math.round(protein/total*100),cp=Math.round(carbs/total*100),fp=100-pp-cp;
   const primary=getCSSVar('--primary');
   const res=document.getElementById('calc-res');
-  res.innerHTML=`<div class="calc-target">${target}</div><div class="calc-tsub">kcal/Tag — ${t('resTarget')}</div><div class="calc-row"><div class="citem"><div class="citem-n">${bmr.toLocaleString()}</div><div class="citem-l">${t('resBMR')}</div></div><div class="citem"><div class="citem-n">${tdee.toLocaleString()}</div><div class="citem-l">${t('resTDEE')}</div></div></div><div style="font-size:.75rem;color:var(--muted);margin-bottom:4px">${t('resMacros')}:</div><div class="macro-bar"><div style="flex:${pp};background:${primary}"></div><div style="flex:${cp};background:#fbbf24"></div><div style="flex:${fp};background:#f9a8d4"></div></div><div class="macro-leg"><span><span class="mdot" style="background:${primary}"></span>Protein: ${protein}g (${pp}%)</span><span><span class="mdot" style="background:#fbbf24"></span>${t('carbs')}: ${carbs}g (${cp}%)</span><span><span class="mdot" style="background:#f9a8d4"></span>Fat: ${fat}g (${fp}%)</span></div>`;
+  res.innerHTML=`<div class="calc-target">${target}</div><div class="calc-tsub">kcal/Tag — ${t('resTarget')}</div><div class="calc-row"><div class="citem"><div class="citem-n">${bmr.toLocaleString()}</div><div class="citem-l">${t('resBMR')}</div></div><div class="citem"><div class="citem-n">${tdee.toLocaleString()}</div><div class="citem-l">${t('resTDEE')}</div></div></div><div style="font-size:.75rem;font-weight:600;color:var(--muted);margin-bottom:8px">${t('resMacros')}</div><div style="display:flex;gap:8px;margin-bottom:10px"><div class="citem" style="flex:1;background:${primary}18;border:1px solid ${primary}35;border-radius:8px;padding:10px 6px"><div class="citem-n" style="color:${primary}">${protein}g</div><div class="citem-l">${lang==='de'?'Eiweiß':'Protein'}</div><div class="citem-l">${pp}%</div></div><div class="citem" style="flex:1;background:#fbbf2418;border:1px solid #fbbf2435;border-radius:8px;padding:10px 6px"><div class="citem-n" style="color:#fbbf24">${carbs}g</div><div class="citem-l">${t('carbs')}</div><div class="citem-l">${cp}%</div></div><div class="citem" style="flex:1;background:#f9a8d418;border:1px solid #f9a8d435;border-radius:8px;padding:10px 6px"><div class="citem-n" style="color:#f9a8d4">${fat}g</div><div class="citem-l">${t('fat')}</div><div class="citem-l">${fp}%</div></div></div><div class="macro-bar"><div style="flex:${pp};background:${primary}"></div><div style="flex:${cp};background:#fbbf24"></div><div style="flex:${fp};background:#f9a8d4"></div></div>`;
   res.style.display='block';
   renderHealthStats();
 }
@@ -540,9 +583,12 @@ function renderHealthLog(){
     if(e.sleepScore!=null)v.push(`<span class="hlth-val">${lang==='de'?'Schlaf':'Sleep'} <b>${e.sleepScore}/10</b></span>`);
     if(e.recovery!=null)v.push(`<span class="hlth-val">${lang==='de'?'Erhol.':'Recov.'} <b>${e.recovery}/10</b></span>`);
     if(e.kcal!=null)v.push(`<span class="hlth-val"><b>${e.kcal}</b> kcal</span>`);
+    if(e.protein!=null)v.push(`<span class="hlth-val"><b>${e.protein}</b>g P</span>`);
+    if(e.carbs!=null)v.push(`<span class="hlth-val"><b>${e.carbs}</b>g KH</span>`);
+    if(e.fat!=null)v.push(`<span class="hlth-val"><b>${e.fat}</b>g F</span>`);
     if(e.steps!=null)v.push(`<span class="hlth-val"><b>${e.steps.toLocaleString()}</b> ${lang==='de'?'Schr.':'steps'}</span>`);
     if(e.notes)v.push(`<span class="hlth-val" style="font-style:italic">${esc(e.notes)}</span>`);
-    return`<div class="hlth-item"><div class="hlth-date">${fmtDate(e.date)}</div><div class="hlth-vals">${v.join('')}</div><button class="btn-icon" onclick="deleteHealthEntry('${e.id}')">🗑️</button></div>`;
+    return`<div class="hlth-item"><div class="hlth-date">${fmtDate(e.date)}</div><div class="hlth-vals">${v.join('')}</div><button class="btn-icon" onclick="editHealthEntry('${e.id}')" title="${lang==='de'?'Bearbeiten':'Edit'}">✏️</button><button class="btn-icon" onclick="deleteHealthEntry('${e.id}')">🗑️</button></div>`;
   }).join('');
 }
 function renderHealth(){
@@ -551,6 +597,7 @@ function renderHealth(){
 }
 
 // ── Init ──────────────────────────────────────────────────
+viewDate=todayStr();
 document.documentElement.setAttribute('data-theme',theme);
 const savedBg=localStorage.getItem(BG_KEY);if(savedBg)applyBg(savedBg);
 applyLang();
