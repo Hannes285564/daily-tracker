@@ -1,104 +1,347 @@
 <!DOCTYPE html>
-<html lang="de" id="root">
+<html data-theme="aurora" lang="de" id="root">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Daily Tracker</title>
 <style>
-:root{--bg:#0f172a;--surface:#1e293b;--border:#334155;--text:#f1f5f9;--muted:#94a3b8;--primary:#818cf8;}
+:root,[data-theme="aurora"]{--bg:#07030f;--surface:rgba(255,255,255,.05);--border:rgba(255,255,255,.1);--text:#f0eafa;--muted:rgba(255,255,255,.4);--primary:#a78bfa;--accent:#34d399;--font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--radius:20px;--chb:rgba(167,139,250,.4);--sb:rgba(167,139,250,.12);--sc:#a78bfa;}
+[data-theme="apple"]{--bg:#000;--surface:#1c1c1e;--border:rgba(255,255,255,.07);--text:#fff;--muted:rgba(255,255,255,.45);--primary:#0a84ff;--accent:#30d158;--font:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;--radius:18px;--chb:rgba(255,255,255,.15);--sb:rgba(10,132,255,.12);--sc:#0a84ff;}
+[data-theme="forest"]{--bg:#030c07;--surface:rgba(52,211,153,.04);--border:rgba(52,211,153,.14);--text:#e8f5e9;--muted:rgba(180,230,195,.42);--primary:#34d399;--accent:#2dd4bf;--font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--radius:14px;--chb:rgba(52,211,153,.45);--sb:rgba(52,211,153,.1);--sc:#34d399;}
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;background:var(--bg) center/cover fixed;color:var(--text);}
-.overlay{min-height:100vh;background:linear-gradient(160deg,rgba(15,23,42,.93),rgba(49,30,129,.82));display:flex;flex-direction:column;}
-/* topbar */
-.topbar{display:flex;justify-content:flex-end;align-items:center;padding:18px 28px;gap:8px;}
-.lang-btn{padding:5px 13px;border-radius:20px;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-size:.8rem;font-weight:700;cursor:pointer;transition:all .2s;}
-.lang-btn.active{border-color:var(--primary);color:var(--primary);background:#818cf811;}
-.bg-btn{padding:5px 13px;border-radius:20px;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-size:.8rem;cursor:pointer;transition:all .2s;}
-.bg-btn:hover{color:var(--text);border-color:rgba(255,255,255,.2);}
+body{font-family:var(--font);min-height:100vh;background:var(--bg) center/cover fixed;color:var(--text);overflow-x:hidden;}
+/* bg layers */
+.bg-aurora{display:none;position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+[data-theme="aurora"] .bg-aurora{display:block;}
+.blob{position:absolute;border-radius:50%;filter:blur(90px);animation:bfloat 10s ease-in-out infinite;}
+.b1{width:600px;height:400px;background:radial-gradient(ellipse,rgba(139,92,246,.22),transparent 70%);top:-120px;left:-100px;}
+.b2{width:500px;height:500px;background:radial-gradient(ellipse,rgba(20,184,166,.18),transparent 70%);top:30%;right:-80px;animation-delay:-3.5s;}
+.b3{width:380px;height:300px;background:radial-gradient(ellipse,rgba(232,121,249,.14),transparent 70%);bottom:-60px;left:35%;animation-delay:-7s;}
+@keyframes bfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-24px)}}
+.bg-forest{display:none;position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+[data-theme="forest"] .bg-forest{display:block;}
+.fl1,.fl2,.fl3{position:absolute;border-radius:50%;filter:blur(110px);animation:ffloat 13s ease-in-out infinite;}
+.fl1{width:550px;height:550px;background:radial-gradient(ellipse,rgba(6,78,59,.45),transparent 70%);top:-100px;right:-80px;}
+.fl2{width:500px;height:420px;background:radial-gradient(ellipse,rgba(4,50,20,.7),transparent 70%);bottom:-80px;left:-60px;animation-delay:-5s;}
+.fl3{width:380px;height:380px;background:radial-gradient(ellipse,rgba(45,212,191,.07),transparent 70%);top:45%;left:38%;animation-delay:-9s;}
+@keyframes ffloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-22px) scale(1.025)}}
+/* layout */
+.wrap{position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;}
+[data-theme="aurora"] .wrap{background:linear-gradient(160deg,rgba(7,3,15,.92),rgba(26,5,51,.85));}
+[data-theme="forest"] .wrap{background:linear-gradient(160deg,rgba(3,12,7,.96),rgba(2,10,5,.92));}
+/* nav */
+nav{display:flex;justify-content:space-between;align-items:center;padding:14px 28px;border-bottom:1px solid var(--border);}
+.logo{font-size:.95rem;font-weight:600;color:var(--muted);letter-spacing:.02em;}
+[data-theme="forest"] .logo{color:var(--primary);}
+.nav-right{display:flex;align-items:center;gap:10px;}
+.theme-sw{display:flex;gap:6px;align-items:center;margin-right:6px;}
+.ts-btn{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0;transition:all .25s;}
+.ts-btn span{display:block;width:100%;height:100%;border-radius:50%;}
+.ts-btn.active{border-color:var(--text);transform:scale(1.18);}
+.ts-btn:hover:not(.active){transform:scale(1.1);}
+.pill{padding:5px 13px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:.78rem;font-family:inherit;font-weight:500;cursor:pointer;transition:all .22s;}
+.pill.active{border-color:var(--primary);color:var(--primary);}
+.pill:hover:not(.active){color:var(--text);border-color:rgba(255,255,255,.22);}
 /* hero */
-.hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 24px 80px;text-align:center;}
-.greeting{font-size:.82rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
-.main-title{font-size:3.4rem;font-weight:800;background:linear-gradient(135deg,#a5b4fc,#e879f9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1;margin-bottom:10px;}
-.hero-date{font-size:.95rem;color:var(--muted);margin-bottom:60px;}
-/* cards */
-.cards{display:grid;grid-template-columns:1fr 1fr;gap:22px;max-width:680px;width:100%;}
-.nav-card{background:rgba(30,41,59,.55);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.07);border-radius:22px;padding:34px 26px;cursor:pointer;transition:all .28s;text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:10px;}
-.nav-card:hover{background:rgba(30,41,59,.9);border-color:rgba(129,140,248,.45);transform:translateY(-6px);box-shadow:0 28px 56px rgba(0,0,0,.5);}
-.nav-card-icon{font-size:2.8rem;line-height:1;}
-.nav-card-title{font-size:1.15rem;font-weight:700;}
-.nav-card-desc{font-size:.83rem;color:var(--muted);line-height:1.45;}
-.nav-card-stat{margin-top:8px;font-size:.78rem;font-weight:600;color:var(--primary);background:#818cf811;border:1px solid #818cf825;padding:5px 12px;border-radius:14px;align-self:flex-start;}
+.hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px 24px 70px;text-align:center;}
+.eyebrow{font-size:.78rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+.date-badge{display:none;align-items:center;gap:8px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:.78rem;color:var(--muted);margin-bottom:16px;backdrop-filter:blur(8px);}
+.date-dot{width:5px;height:5px;border-radius:50%;background:var(--primary);box-shadow:0 0 6px var(--primary);}
+[data-theme="aurora"] .date-badge,[data-theme="apple"] .date-badge,[data-theme="forest"] .date-badge{display:inline-flex;}
+.headline{font-size:3.6rem;font-weight:800;line-height:1.08;letter-spacing:-.03em;margin-bottom:12px;position:relative;}
+[data-theme="aurora"] .headline{background:linear-gradient(135deg,#e879f9 0%,#a78bfa 35%,#34d399 75%,#60a5fa 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+[data-theme="forest"] .headline{background:linear-gradient(135deg,#6ee7b7 0%,#34d399 40%,#2dd4bf 80%,#a7f3d0 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:3.4rem;}
+[data-theme="apple"] .headline{color:#fff;-webkit-text-fill-color:#fff;background:none;font-size:3.8rem;letter-spacing:-.04em;}
+.tagline{font-size:.96rem;color:var(--muted);max-width:380px;line-height:1.6;margin-bottom:44px;}
+
+/* ── Bento grid ─────────────────────────────────────────── */
+.bento{display:grid;grid-template-columns:3fr 2fr;gap:14px;max-width:740px;width:100%;}
+/* bcard base */
+.bcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;color:inherit;display:flex;flex-direction:column;transition:all .32s cubic-bezier(.25,.46,.45,.94);position:relative;overflow:hidden;}
+/* shine sweep on hover */
+.bcard::after{content:'';position:absolute;top:0;left:-110%;width:55%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.045),transparent);transform:skewX(-18deg);transition:left .55s;pointer-events:none;}
+.bcard:hover::after{left:160%;}
+/* inner gradient shine */
+.bcard::before{content:'';position:absolute;inset:0;border-radius:var(--radius);background:linear-gradient(135deg,rgba(255,255,255,.05),transparent 55%);opacity:0;transition:opacity .3s;pointer-events:none;}
+.bcard:hover::before{opacity:1;}
+.bcard:hover{border-color:var(--chb);box-shadow:0 22px 52px rgba(0,0,0,.42);}
+
+/* Feature card (todos) — full width, horizontal */
+.bcard-feat{grid-column:1/-1;flex-direction:row;gap:0;align-items:stretch;padding:0;}
+.bcard-feat:hover{transform:translateY(-4px);}
+.bfc-left{padding:26px 22px 26px 28px;display:flex;flex-direction:column;gap:10px;justify-content:center;align-items:center;flex-shrink:0;border-right:1px solid var(--border);}
+.bfc-mid{flex:1;padding:24px 22px;display:flex;flex-direction:column;justify-content:center;min-width:0;}
+.bfc-right{padding:22px 24px 22px 16px;display:flex;flex-direction:column;justify-content:center;flex-shrink:0;width:170px;}
+.bfc-icon{font-size:2.8rem;line-height:1;}
+.bfc-badge{font-size:.73rem;font-weight:600;padding:3px 10px;border-radius:10px;background:var(--sb);color:var(--sc);border:1px solid rgba(167,139,250,.2);text-align:center;white-space:nowrap;}
+.bfc-title{font-size:1.1rem;font-weight:700;letter-spacing:-.01em;margin-bottom:5px;}
+.bfc-desc{font-size:.8rem;color:var(--muted);line-height:1.5;margin-bottom:14px;}
+.bfc-prog-lbl{display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted);margin-bottom:5px;}
+.bfc-prog-bg{background:rgba(255,255,255,.08);border-radius:999px;height:7px;overflow:hidden;}
+.bfc-prog-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:999px;transition:width .5s ease;}
+.bfc-chart-lbl{font-size:.68rem;color:var(--muted);margin-bottom:7px;letter-spacing:.04em;text-transform:uppercase;}
+/* Medium card (sport) */
+.bcard-md{padding:22px 20px;grid-column:1;}
+.bcard-md:hover{transform:translateY(-5px);}
+/* Small card (health) */
+.bcard-sm{padding:20px 18px;grid-column:2;}
+.bcard-sm:hover{transform:translateY(-5px);}
+/* theme specifics */
+[data-theme="aurora"] .bcard{backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);}
+[data-theme="forest"] .bcard{background:rgba(5,25,13,.55);backdrop-filter:blur(18px);border-color:rgba(52,211,153,.11);}
+[data-theme="forest"] .bcard:hover{background:rgba(5,35,17,.72);box-shadow:0 22px 52px rgba(0,0,0,.5),0 0 0 1px rgba(52,211,153,.2);}
+[data-theme="apple"] .bcard{background:#1c1c1e;}
+[data-theme="apple"] .bcard:hover{background:#252528;box-shadow:0 22px 52px rgba(0,0,0,.55);}
+
+/* card internals shared */
+.bc-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.bc-icon{font-size:1.9rem;line-height:1;}
+.bc-badge{font-size:.72rem;font-weight:600;padding:3px 10px;border-radius:10px;background:var(--sb);color:var(--sc);border:1px solid rgba(167,139,250,.2);}
+.bc-badge-2{background:rgba(52,211,153,.1);color:var(--accent);border-color:rgba(52,211,153,.2);}
+.bc-badge-3{background:rgba(248,113,113,.1);color:#f87171;border-color:rgba(248,113,113,.18);}
+[data-theme="apple"] .bc-badge-2{color:#30d158;background:rgba(48,209,88,.1);border-color:rgba(48,209,88,.2);}
+[data-theme="forest"] .bc-badge,.bfc-badge{color:var(--primary);background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.22);}
+.bc-title{font-size:.98rem;font-weight:700;letter-spacing:-.01em;margin-bottom:5px;}
+.bc-desc{font-size:.78rem;color:var(--muted);line-height:1.5;flex:1;}
+.bc-chart{margin-top:12px;}
+
+/* apple stat bar */
+.stat-bar{display:none;justify-content:center;gap:40px;padding:18px 24px;border-top:1px solid var(--border);}
+[data-theme="apple"] .stat-bar{display:flex;}
+.sbi .sbn{font-size:1.4rem;font-weight:600;color:#fff;text-align:center;}
+.sbi .sbl{font-size:.7rem;color:var(--muted);text-align:center;margin-top:2px;}
+
 #bg-input{display:none;}
-@media(max-width:580px){.cards{grid-template-columns:1fr;}.main-title{font-size:2.2rem;}.topbar{padding:14px 18px;}}
+@media(max-width:600px){
+  .bento{grid-template-columns:1fr;}
+  .bcard-feat{flex-direction:column;}
+  .bfc-left{flex-direction:row;border-right:none;border-bottom:1px solid var(--border);padding:16px 20px;justify-content:flex-start;gap:12px;}
+  .bfc-right{width:auto;padding:4px 20px 16px;}
+  .bcard-md,.bcard-sm{grid-column:1;}
+  .headline{font-size:2.4rem !important;}
+  nav{padding:12px 16px;}
+}
 </style>
 </head>
 <body id="body">
 <input type="file" id="bg-input" accept="image/*" onchange="pickBg(this)">
-<div class="overlay">
-  <div class="topbar">
-    <button class="bg-btn" id="bg-btn" onclick="document.getElementById('bg-input').click()"></button>
-    <button class="lang-btn" id="l-de" onclick="setLang('de')">DE</button>
-    <button class="lang-btn" id="l-en" onclick="setLang('en')">EN</button>
-  </div>
+<div class="bg-aurora"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+<div class="bg-forest"><div class="fl1"></div><div class="fl2"></div><div class="fl3"></div></div>
+<div class="wrap">
+  <nav>
+    <span class="logo" id="logo-text">✦ Daily Tracker</span>
+    <div class="nav-right">
+      <div class="theme-sw">
+        <button class="ts-btn active" data-t="aurora" onclick="setTheme('aurora')" title="Aurora"><span style="background:linear-gradient(135deg,#1a0533,#a78bfa 60%,#34d399)"></span></button>
+        <button class="ts-btn" data-t="apple" onclick="setTheme('apple')" title="Apple"><span style="background:linear-gradient(135deg,#111,#0a84ff)"></span></button>
+        <button class="ts-btn" data-t="forest" onclick="setTheme('forest')" title="Forest"><span style="background:linear-gradient(135deg,#030c07,#065f46 55%,#2dd4bf)"></span></button>
+      </div>
+      <button class="pill" id="bg-btn" onclick="document.getElementById('bg-input').click()"></button>
+      <button class="pill" id="l-de" onclick="setLang('de')">DE</button>
+      <button class="pill" id="l-en" onclick="setLang('en')">EN</button>
+    </div>
+  </nav>
+
   <div class="hero">
-    <div class="greeting" id="greeting"></div>
-    <div class="main-title">Daily Tracker</div>
-    <div class="hero-date" id="hdate"></div>
-    <div class="cards">
-      <a class="nav-card" href="daily-tracker.html?tab=todos">
-        <div class="nav-card-icon">✅</div>
-        <div class="nav-card-title" id="ct1"></div>
-        <div class="nav-card-desc" id="cd1"></div>
-        <div class="nav-card-stat" id="cs1"></div>
+    <div class="eyebrow" id="eyebrow"></div>
+    <div class="date-badge"><span class="date-dot"></span><span id="hdate"></span></div>
+    <h1 class="headline" id="headline"></h1>
+    <p class="tagline" id="tagline"></p>
+
+    <div class="bento">
+
+      <!-- TODOS — feature card, full width, horizontal -->
+      <a class="bcard bcard-feat" href="daily-tracker.html?tab=todos">
+        <div class="bfc-left">
+          <div class="bfc-icon">✅</div>
+          <div class="bfc-badge" id="cs1"></div>
+        </div>
+        <div class="bfc-mid">
+          <div class="bfc-title" id="ct1"></div>
+          <div class="bfc-desc" id="cd1"></div>
+          <div>
+            <div class="bfc-prog-lbl"><span id="bp-lbl"></span><span id="bp-pct">0%</span></div>
+            <div class="bfc-prog-bg"><div class="bfc-prog-fill" id="bp-fill" style="width:0%"></div></div>
+          </div>
+        </div>
+        <div class="bfc-right">
+          <div class="bfc-chart-lbl" id="chart-lbl-todos"></div>
+          <div id="chart-todos"></div>
+        </div>
       </a>
-      <a class="nav-card" href="daily-tracker.html?tab=sport">
-        <div class="nav-card-icon">🏃</div>
-        <div class="nav-card-title" id="ct2"></div>
-        <div class="nav-card-desc" id="cd2"></div>
-        <div class="nav-card-stat" id="cs2"></div>
+
+      <!-- SPORT — medium card -->
+      <a class="bcard bcard-md" href="daily-tracker.html?tab=sport">
+        <div class="bc-head">
+          <div class="bc-icon">🏃</div>
+          <div class="bc-badge bc-badge-2" id="cs2"></div>
+        </div>
+        <div class="bc-title" id="ct2"></div>
+        <div class="bc-desc" id="cd2"></div>
+        <div class="bc-chart" id="chart-sport"></div>
       </a>
+
+      <!-- HEALTH — small card -->
+      <a class="bcard bcard-sm" href="daily-tracker.html?tab=health">
+        <div class="bc-head">
+          <div class="bc-icon">❤️</div>
+          <div class="bc-badge bc-badge-3" id="cs3"></div>
+        </div>
+        <div class="bc-title" id="ct3"></div>
+        <div class="bc-desc" id="cd3"></div>
+        <div class="bc-chart" id="chart-health"></div>
+      </a>
+
     </div>
   </div>
+
+  <div class="stat-bar">
+    <div class="sbi"><div class="sbn" id="st1">—</div><div class="sbl" id="stl1"></div></div>
+    <div class="sbi"><div class="sbn" id="st2">—</div><div class="sbl" id="stl2"></div></div>
+    <div class="sbi"><div class="sbn" id="st3">—</div><div class="sbl" id="stl3"></div></div>
+  </div>
 </div>
+
 <script>
-const BG_KEY='dt-bg',LANG_KEY='dt-lang',DATA_KEY='daily-tracker-v2';
+const THEME_KEY='dt-theme',LANG_KEY='dt-lang',BG_KEY='dt-bg',DATA_KEY='daily-tracker-v2';
 const T={
-  de:{greet:['Guten Morgen','Guten Tag','Guten Abend'],ct1:'Todos & Fortschritt',cd1:'Tägliche Aufgaben verwalten & tracken',ct2:'Sport Aktivitäten',cd2:'Training aufzeichnen & auswerten',s1:'Heute erledigt',s2:'Min. diese Woche',bg:'🖼 Hintergrundbild',days:['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'],months:['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember']},
-  en:{greet:['Good morning','Good afternoon','Good evening'],ct1:'Todos & Progress',cd1:'Manage & track your daily tasks',ct2:'Sports Activities',cd2:'Log workouts & view stats',s1:'Done today',s2:'Min. this week',bg:'🖼 Background',days:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],months:['January','February','March','April','May','June','July','August','September','October','November','December']}
+de:{
+  eyebrowA:'Dein persönlicher Begleiter',eyebrowF:'In Einklang mit deinen Zielen',eyebrowAp:'Persönlicher Tracker',
+  hlA:'Tracke was\nwirklich zählt.',hlF:'Wachse\njeden Tag.',hlAp:'Dein Tag.\nOrganisiert.',
+  tagA:'Deine täglichen Gewohnheiten und dein Training — schön visualisiert, immer im Blick.',
+  tagF:'Dein Fortschritt wächst still — beständig, natürlich, jeden Tag ein bisschen mehr.',
+  tagAp:'Behalte deine täglichen Aufgaben und deinen Sport im Blick.',
+  ct1:'Todos & Fortschritt',cd1:'Tägliche Aufgaben verwalten und Fortschritt tracken.',
+  ct2:'Sport Aktivitäten',cd2:'Training aufzeichnen, Wochenziele setzen und Muster erkennen.',
+  ct3:'Gesundheit',cd3:'Gewicht, Puls & Schlaf im Überblick.',
+  s1:'Heute',s2:'Min./Woche',s3:'Gewicht',bg:'🖼 Hintergrundbild',
+  stl1:'Erledigt heute',stl2:'Sport diese Woche',stl3:'Aktuell',
+  logo:'✦ Daily Tracker',logoF:'🌿 Daily Tracker',
+  wk7:'7 Tage',noData:'Jetzt starten',
+  days:['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'],
+  months:['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember']
+},
+en:{
+  eyebrowA:'Your personal companion',eyebrowF:'In harmony with your goals',eyebrowAp:'Personal tracker',
+  hlA:'Track what\ntruly matters.',hlF:'Grow\nevery day.',hlAp:'Your day.\nOrganized.',
+  tagA:'Your daily habits and training — beautifully visualized, always in view.',
+  tagF:'Your progress grows quietly — consistent, natural, a little more every day.',
+  tagAp:'Keep your daily tasks and sports in view — all in one place.',
+  ct1:'Todos & Progress',cd1:'Manage daily tasks and track your completion over time.',
+  ct2:'Sports Activities',cd2:'Log workouts, set weekly goals and spot patterns.',
+  ct3:'Health',cd3:'Weight, heart rate & sleep at a glance.',
+  s1:'Today',s2:'Min./week',s3:'Weight',bg:'🖼 Background',
+  stl1:'Done today',stl2:'Sport this week',stl3:'Current',
+  logo:'✦ Daily Tracker',logoF:'🌿 Daily Tracker',
+  wk7:'7 days',noData:'Start tracking',
+  days:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
+  months:['January','February','March','April','May','June','July','August','September','October','November','December']
+}
 };
+
+let theme=localStorage.getItem(THEME_KEY)||'aurora';
+if(theme==='futuristic'){theme='forest';localStorage.setItem(THEME_KEY,'forest');}
 let lang=localStorage.getItem(LANG_KEY)||'de';
+
+function setTheme(th){theme=th;localStorage.setItem(THEME_KEY,th);document.documentElement.setAttribute('data-theme',th);document.querySelectorAll('.ts-btn').forEach(b=>b.classList.toggle('active',b.dataset.t===th));render();}
 function setLang(l){lang=l;localStorage.setItem(LANG_KEY,l);render();}
 function todayStr(){return new Date().toISOString().split('T')[0];}
+function set(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
+
+function primaryColor(){return theme==='apple'?'#0a84ff':theme==='forest'?'#34d399':'#a78bfa';}
+function accentColor(){return theme==='apple'?'#30d158':theme==='forest'?'#2dd4bf':'#34d399';}
+
+function miniBar(vals,color,h=36){
+  const w=200,n=vals.length,bw=(w-(n-1)*3)/n,mx=Math.max(...vals,1);
+  const bars=vals.map((v,i)=>{const bh=Math.max(v>0?4:1.5,(v/mx)*(h-4));return`<rect x="${(i*(bw+3)).toFixed(1)}" y="${(h-bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="2.5" fill="${color}" opacity="${v>0?.82:.13}"/>`;}).join('');
+  return`<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:${h}px">${bars}</svg>`;
+}
+function miniLine(pts,color,h=40){
+  if(pts.length<2)return'';
+  const valid=pts.filter(p=>p!=null);if(valid.length<2)return'';
+  const w=200,mn=Math.min(...valid),mx=Math.max(...valid),rng=mx-mn||1;
+  const cx=(v,i)=>((i/(pts.length-1))*w).toFixed(1);
+  const cy=(v)=>(h-4-((v-mn)/rng)*(h-10)).toFixed(1);
+  const pairs=pts.map((v,i)=>v!=null?{x:cx(v,i),y:cy(v)}:null);
+  let segs=[],cur=[];
+  pairs.forEach(p=>{if(p)cur.push(p);else if(cur.length){segs.push(cur);cur=[];}});
+  if(cur.length)segs.push(cur);
+  let out='';
+  segs.forEach(s=>{
+    const d=s.map((p,i)=>`${i?'L':'M'}${p.x},${p.y}`).join(' ');
+    const area=d+` L${s[s.length-1].x},${h} L${s[0].x},${h} Z`;
+    out+=`<path d="${area}" fill="${color}" opacity=".13"/><path d="${d}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>`;
+    if(s.length<=10)s.forEach(p=>out+=`<circle cx="${p.x}" cy="${p.y}" r="2.8" fill="${color}"/>`);
+  });
+  return`<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:${h}px">${out}</svg>`;
+}
+
 function getStats(){
   let d;try{d=JSON.parse(localStorage.getItem(DATA_KEY))||{todos:[],completions:{},activities:[]};}catch{d={todos:[],completions:{},activities:[]};}
-  const day=todayStr(),active=(d.todos||[]).filter(t=>t.active),comp=d.completions[day]||{};
-  let p=0;
-  if(active.length){
-    const sum=active.reduce((s,t)=>{const v=Array.isArray(comp)?(comp.includes(t.id)?1:0):(comp[t.id]||0);return s+(t.type==='count'?Math.min(v/(t.target||1),1):(v?1:0));},0);
-    p=Math.round(sum/active.length*100);
-  }
-  const wds=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-(6-i));return d.toISOString().split('T')[0];});
+  let hd;try{hd=JSON.parse(localStorage.getItem('daily-tracker-health'))||{entries:[],profile:{}};}catch{hd={entries:[],profile:{}};}
+  const active=(d.todos||[]).filter(x=>x.active);
+  function calcPct(ds){const c=d.completions[ds]||{};if(!active.length)return 0;const s=active.reduce((s,x)=>{const v=Array.isArray(c)?(c.includes(x.id)?1:0):(c[x.id]||0);return s+(x.type==='count'?Math.min(v/(x.target||1),1):(v?1:0));},0);return Math.round(s/active.length*100);}
+  const wds=Array.from({length:7},(_,i)=>{const dd=new Date();dd.setDate(dd.getDate()-(6-i));return dd.toISOString().split('T')[0];});
+  const p=calcPct(todayStr());
   const wm=(d.activities||[]).filter(a=>wds.includes(a.date)).reduce((s,a)=>s+a.duration,0);
-  return{p,wm};
+  const td7=wds.map(ds=>calcPct(ds));
+  const sd7=wds.map(ds=>(d.activities||[]).filter(a=>a.date===ds).reduce((s,a)=>s+a.duration,0));
+  const he=(hd.entries||[]);
+  const we=he.filter(e=>e.weight!=null).sort((a,b)=>a.date.localeCompare(b.date)).slice(-14);
+  const curW=we.length?we[we.length-1].weight:null;
+  const avgSl7=(()=>{const sl=he.filter(e=>e.sleepH!=null&&wds.includes(e.date));return sl.length?(sl.reduce((s,e)=>s+e.sleepH,0)/sl.length).toFixed(1):null;})();
+  const target=hd.profile?.target??null;
+  return{p,wm,acts:(d.activities||[]).length,td7,sd7,weightPts:we,curW,avgSl7,target};
 }
+
 function render(){
-  const t=T[lang],now=new Date(),h=now.getHours();
+  const tl=T[lang],now=new Date(),isF=theme==='forest',isAp=theme==='apple';
   document.getElementById('root').lang=lang;
-  document.getElementById('greeting').textContent=t.greet[h<12?0:h<18?1:2];
-  document.getElementById('hdate').textContent=`${t.days[now.getDay()]}, ${now.getDate()}. ${t.months[now.getMonth()]} ${now.getFullYear()}`;
-  document.getElementById('ct1').textContent=t.ct1;
-  document.getElementById('cd1').textContent=t.cd1;
-  document.getElementById('ct2').textContent=t.ct2;
-  document.getElementById('cd2').textContent=t.cd2;
-  document.getElementById('bg-btn').textContent=t.bg;
+  set('eyebrow',isF?tl.eyebrowF:isAp?tl.eyebrowAp:tl.eyebrowA);
+  document.getElementById('headline').innerHTML=(isF?tl.hlF:isAp?tl.hlAp:tl.hlA).replace('\n','<br>');
+  set('tagline',isF?tl.tagF:isAp?tl.tagAp:tl.tagA);
+  set('hdate',`${tl.days[now.getDay()]}, ${now.getDate()}. ${tl.months[now.getMonth()]}`);
+  set('ct1',tl.ct1);set('cd1',tl.cd1);set('ct2',tl.ct2);set('cd2',tl.cd2);set('ct3',tl.ct3);set('cd3',tl.cd3);
+  set('bg-btn',tl.bg);set('logo-text',isF?tl.logoF:tl.logo);
+  set('chart-lbl-todos',tl.wk7);
   document.getElementById('l-de').classList.toggle('active',lang==='de');
   document.getElementById('l-en').classList.toggle('active',lang==='en');
-  const s=getStats();
-  document.getElementById('cs1').textContent=`${t.s1}: ${s.p}%`;
-  document.getElementById('cs2').textContent=`${t.s2}: ${s.wm}`;
+  document.querySelectorAll('.ts-btn').forEach(b=>b.classList.toggle('active',b.dataset.t===theme));
+
+  const s=getStats(),pc=primaryColor(),ac=accentColor();
+
+  // Todos feature card
+  set('cs1',`${tl.s1}: ${s.p}%`);
+  set('bp-lbl',lang==='de'?'Fortschritt heute':'Progress today');
+  set('bp-pct',s.p+'%');
+  document.getElementById('bp-fill').style.width=s.p+'%';
+  document.getElementById('chart-todos').innerHTML=miniBar(s.td7,pc,38);
+
+  // Sport card
+  set('cs2',`${s.wm} ${tl.s2}`);
+  document.getElementById('chart-sport').innerHTML=miniBar(s.sd7,ac,34);
+
+  // Health card
+  const hDisp=s.target?`${s.target} kcal`:s.curW?`${s.curW} kg`:s.avgSl7?`${s.avgSl7}h`:tl.noData;
+  set('cs3',hDisp);
+  if(s.weightPts.length>=2){
+    document.getElementById('chart-health').innerHTML=miniLine(s.weightPts.map(e=>e.weight),pc,38);
+  } else if(s.avgSl7){
+    const sl7=Array.from({length:7},(_,i)=>{const dd=new Date();dd.setDate(dd.getDate()-(6-i));const ds=dd.toISOString().split('T')[0];const hd2=JSON.parse(localStorage.getItem('daily-tracker-health')||'{"entries":[]}');const e=(hd2.entries||[]).find(x=>x.date===ds);return e?.sleepH??null;});
+    document.getElementById('chart-health').innerHTML=miniBar(sl7.map(v=>v??0),pc,38);
+  } else {
+    document.getElementById('chart-health').innerHTML=`<div style="font-size:.72rem;color:var(--muted);padding:6px 0;opacity:.7">${tl.noData} →</div>`;
+  }
+
+  // Apple stat bar
+  set('st1',s.p+'%');set('st2',s.wm+' min');set('st3',s.curW?s.curW+' kg':s.avgSl7?s.avgSl7+'h':'—');
+  set('stl1',tl.stl1);set('stl2',tl.stl2);set('stl3',tl.stl3);
 }
+
 function pickBg(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{localStorage.setItem(BG_KEY,e.target.result);applyBg(e.target.result);};r.readAsDataURL(f);}
 function applyBg(url){document.getElementById('body').style.backgroundImage=`url(${url})`;}
+
 const savedBg=localStorage.getItem(BG_KEY);if(savedBg)applyBg(savedBg);
+document.documentElement.setAttribute('data-theme',theme);
 render();
 </script>
 </body>

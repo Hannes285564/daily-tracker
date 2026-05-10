@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="de" id="root">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Daily Tracker</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;background:#07030f;color:#f0eafa;overflow-x:hidden;}
+/* Animated aurora background */
+.aurora-bg{position:fixed;inset:0;z-index:0;overflow:hidden;}
+.aurora-bg::before{content:'';position:absolute;inset:-50%;background:conic-gradient(from 180deg at 50% 50%,#0d0221 0deg,#1a0533 60deg,#0a1628 120deg,#071620 180deg,#0d0221 360deg);animation:spin 25s linear infinite;opacity:.9;}
+.blob{position:absolute;border-radius:50%;filter:blur(90px);animation:float 10s ease-in-out infinite;}
+.b1{width:600px;height:400px;background:radial-gradient(ellipse,rgba(139,92,246,.22),transparent 70%);top:-100px;left:-100px;animation-delay:0s;}
+.b2{width:500px;height:500px;background:radial-gradient(ellipse,rgba(20,184,166,.18),transparent 70%);top:30%;right:-100px;animation-delay:-3s;}
+.b3{width:400px;height:300px;background:radial-gradient(ellipse,rgba(232,121,249,.15),transparent 70%);bottom:-50px;left:30%;animation-delay:-6s;}
+.b4{width:350px;height:350px;background:radial-gradient(ellipse,rgba(59,130,246,.12),transparent 70%);top:20%;left:30%;animation-delay:-9s;}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes float{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-28px) scale(1.04)}}
+/* Stars */
+.stars{position:fixed;inset:0;z-index:0;background-image:radial-gradient(1px 1px at 20% 30%,rgba(255,255,255,.35),transparent),radial-gradient(1px 1px at 60% 15%,rgba(255,255,255,.25),transparent),radial-gradient(1px 1px at 80% 60%,rgba(255,255,255,.2),transparent),radial-gradient(1.5px 1.5px at 10% 70%,rgba(255,255,255,.3),transparent),radial-gradient(1px 1px at 45% 80%,rgba(255,255,255,.2),transparent),radial-gradient(1px 1px at 90% 25%,rgba(255,255,255,.25),transparent);}
+/* Content */
+.wrap{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;}
+/* Topbar */
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:16px 28px;}
+.logo{font-size:.95rem;font-weight:600;color:rgba(255,255,255,.5);letter-spacing:.02em;}
+.tr{display:flex;gap:8px;}
+.pill{padding:5px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);font-size:.78rem;font-family:inherit;font-weight:500;cursor:pointer;transition:all .25s;backdrop-filter:blur(4px);}
+.pill.active{border-color:rgba(167,139,250,.5);color:#a78bfa;background:rgba(139,92,246,.12);}
+.pill:hover:not(.active){border-color:rgba(255,255,255,.25);color:rgba(255,255,255,.75);background:rgba(255,255,255,.07);}
+/* Hero */
+.hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 24px 90px;text-align:center;}
+.kicker{font-size:.78rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:rgba(167,139,250,.6);margin-bottom:18px;}
+.headline{font-size:3.8rem;font-weight:800;line-height:1.08;letter-spacing:-.03em;margin-bottom:18px;background:linear-gradient(135deg,#e879f9 0%,#a78bfa 35%,#34d399 70%,#60a5fa 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.tagline{font-size:1rem;font-weight:400;color:rgba(255,255,255,.4);max-width:360px;line-height:1.6;margin-bottom:62px;}
+/* Cards */
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:640px;width:100%;}
+.card{background:rgba(255,255,255,.04);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.09);border-radius:24px;padding:30px 24px;text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:10px;transition:all .32s cubic-bezier(.25,.46,.45,.94);animation:cardFloat 6s ease-in-out infinite;}
+.card:nth-child(2){animation-delay:-3s;}
+@keyframes cardFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.card:hover{background:rgba(255,255,255,.08);border-color:rgba(167,139,250,.3);transform:translateY(-8px) !important;box-shadow:0 32px 64px rgba(0,0,0,.4),0 0 0 1px rgba(167,139,250,.15),inset 0 1px 0 rgba(255,255,255,.1);}
+/* Inner shine on hover */
+.card::before{content:'';position:absolute;inset:0;border-radius:24px;background:linear-gradient(135deg,rgba(255,255,255,.06),transparent 60%);opacity:0;transition:opacity .3s;}
+.card{position:relative;}
+.card:hover::before{opacity:1;}
+.card-icon{font-size:2.6rem;line-height:1;margin-bottom:4px;}
+.card-title{font-size:1.05rem;font-weight:700;letter-spacing:-.01em;color:rgba(255,255,255,.92);}
+.card-desc{font-size:.82rem;color:rgba(255,255,255,.4);line-height:1.5;}
+.card-stat{margin-top:10px;font-size:.76rem;font-weight:600;padding:4px 12px;border-radius:12px;align-self:flex-start;}
+.card:nth-child(1) .card-stat{background:rgba(167,139,250,.12);color:#a78bfa;border:1px solid rgba(167,139,250,.2);}
+.card:nth-child(2) .card-stat{background:rgba(52,211,153,.1);color:#34d399;border:1px solid rgba(52,211,153,.18);}
+/* Date pill */
+.date-pill{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:6px 16px;font-size:.78rem;color:rgba(255,255,255,.4);margin-bottom:24px;backdrop-filter:blur(8px);}
+.date-dot{width:5px;height:5px;border-radius:50%;background:#a78bfa;box-shadow:0 0 6px #a78bfa;}
+#bg-input{display:none;}
+@media(max-width:560px){.cards{grid-template-columns:1fr;}.headline{font-size:2.5rem;}}
+</style>
+</head>
+<body id="body">
+<input type="file" id="bg-input" accept="image/*" onchange="pickBg(this)">
+<div class="aurora-bg">
+  <div class="blob b1"></div><div class="blob b2"></div>
+  <div class="blob b3"></div><div class="blob b4"></div>
+</div>
+<div class="stars"></div>
+<div class="wrap">
+  <div class="topbar">
+    <span class="logo">✦ Daily Tracker</span>
+    <div class="tr">
+      <button class="pill" id="bg-btn" onclick="document.getElementById('bg-input').click()"></button>
+      <button class="pill" id="l-de" onclick="setLang('de')">DE</button>
+      <button class="pill" id="l-en" onclick="setLang('en')">EN</button>
+    </div>
+  </div>
+  <div class="hero">
+    <div class="kicker" id="kicker"></div>
+    <div class="date-pill"><span class="date-dot"></span><span id="hdate"></span></div>
+    <h1 class="headline" id="headline"></h1>
+    <p class="tagline" id="tagline"></p>
+    <div class="cards">
+      <a class="card" href="daily-tracker.html?tab=todos">
+        <div class="card-icon">✅</div>
+        <div class="card-title" id="ct1"></div>
+        <div class="card-desc" id="cd1"></div>
+        <div class="card-stat" id="cs1"></div>
+      </a>
+      <a class="card" href="daily-tracker.html?tab=sport">
+        <div class="card-icon">🏃</div>
+        <div class="card-title" id="ct2"></div>
+        <div class="card-desc" id="cd2"></div>
+        <div class="card-stat" id="cs2"></div>
+      </a>
+    </div>
+  </div>
+</div>
+<script>
+const BG_KEY='dt-bg',LANG_KEY='dt-lang',DATA_KEY='daily-tracker-v2';
+const T={
+  de:{kicker:'Dein persönlicher Begleiter',hl:'Tracke was\nwirklich zählt.',tag:'Deine täglichen Gewohnheiten und dein Training — schön visualisiert, immer im Blick.',ct1:'Todos & Fortschritt',cd1:'Verwalte deine täglichen Aufgaben und beobachte deinen Fortschritt.',ct2:'Sport Aktivitäten',cd2:'Zeichne dein Training auf und entdecke Muster in deiner Aktivität.',s1:'Heute erledigt',s2:'Min. diese Woche',bg:'🖼 Hintergrundbild',days:['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'],months:['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember']},
+  en:{kicker:'Your personal companion',hl:'Track what\ntruly matters.',tag:'Your daily habits and training — beautifully visualized, always in view.',ct1:'Todos & Progress',cd1:'Manage your daily tasks and observe your progress.',ct2:'Sports Activities',cd2:'Log your workouts and discover patterns in your activity.',s1:'Done today',s2:'Min. this week',bg:'🖼 Background',days:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],months:['January','February','March','April','May','June','July','August','September','October','November','December']}
+};
+let lang=localStorage.getItem(LANG_KEY)||'de';
+function t(k){return T[lang][k]||k;}
+function setLang(l){lang=l;localStorage.setItem(LANG_KEY,l);render();}
+function todayStr(){return new Date().toISOString().split('T')[0];}
+function getStats(){
+  let d;try{d=JSON.parse(localStorage.getItem(DATA_KEY))||{todos:[],completions:{},activities:[]};}catch{d={todos:[],completions:{},activities:[]};}
+  const day=todayStr(),active=(d.todos||[]).filter(x=>x.active),comp=d.completions[day]||{};
+  let p=0;if(active.length){const sum=active.reduce((s,x)=>{const v=Array.isArray(comp)?(comp.includes(x.id)?1:0):(comp[x.id]||0);return s+(x.type==='count'?Math.min(v/(x.target||1),1):(v?1:0));},0);p=Math.round(sum/active.length*100);}
+  const wds=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-(6-i));return d.toISOString().split('T')[0];});
+  const wm=(d.activities||[]).filter(a=>wds.includes(a.date)).reduce((s,a)=>s+a.duration,0);
+  return{p,wm};
+}
+function set(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
+function render(){
+  const now=new Date();
+  document.getElementById('root').lang=lang;
+  set('kicker',t('kicker'));
+  document.getElementById('headline').innerHTML=t('hl').replace('\n','<br>');
+  set('tagline',t('tag'));
+  set('hdate',`${t('days')[now.getDay()]}, ${now.getDate()}. ${t('months')[now.getMonth()]}`);
+  set('ct1',t('ct1'));set('cd1',t('cd1'));set('ct2',t('ct2'));set('cd2',t('cd2'));
+  set('bg-btn',t('bg'));
+  document.getElementById('l-de').classList.toggle('active',lang==='de');
+  document.getElementById('l-en').classList.toggle('active',lang==='en');
+  const s=getStats();
+  set('cs1',`${t('s1')}: ${s.p}%`);set('cs2',`${t('s2')}: ${s.wm}`);
+}
+function pickBg(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{localStorage.setItem(BG_KEY,e.target.result);applyBg(e.target.result);};r.readAsDataURL(f);}
+function applyBg(url){document.getElementById('body').style.backgroundImage=`url(${url})`;document.getElementById('body').style.backgroundSize='cover';document.getElementById('body').style.backgroundPosition='center';}
+const savedBg=localStorage.getItem(BG_KEY);if(savedBg)applyBg(savedBg);
+render();
+</script>
+</body>
+</html>

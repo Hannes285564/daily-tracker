@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="de" id="root">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Daily Tracker // SYS</title>
+<style>
+:root{--bg:#04040f;--cyan:#00d4ff;--mag:#ff00aa;--green:#00ff88;--text:#c8e8f0;--muted:#3a6070;--card:rgba(0,18,35,.75);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Courier New',Courier,monospace;min-height:100vh;background:var(--bg);color:var(--text);overflow-x:hidden;}
+/* Grid bg */
+body::before{content:'';position:fixed;inset:0;background:linear-gradient(rgba(0,212,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,.035) 1px,transparent 1px);background-size:55px 55px;pointer-events:none;z-index:0;}
+/* Scan line */
+.scan{position:fixed;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent 0%,var(--cyan) 50%,transparent 100%);animation:scan 7s linear infinite;opacity:.35;z-index:1;pointer-events:none;}
+@keyframes scan{0%{top:-2px}100%{top:100vh}}
+.wrap{position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;}
+/* Topbar */
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:10px 24px;border-bottom:1px solid rgba(0,212,255,.12);}
+.status{display:flex;align-items:center;gap:18px;font-size:.68rem;color:var(--muted);letter-spacing:.06em;}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2.5s ease-in-out infinite;margin-right:5px;}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 8px var(--green)}50%{opacity:.4;box-shadow:0 0 2px var(--green)}}
+.tr{display:flex;gap:7px;}
+.lb,.bgb{padding:4px 11px;border:1px solid rgba(0,212,255,.25);background:transparent;color:var(--muted);font-size:.68rem;font-family:inherit;cursor:pointer;letter-spacing:.1em;transition:all .2s;}
+.lb.active{border-color:var(--cyan);color:var(--cyan);background:rgba(0,212,255,.07);text-shadow:0 0 8px var(--cyan);}
+.lb:hover:not(.active),.bgb:hover{border-color:rgba(0,212,255,.5);color:var(--text);}
+/* Hero */
+.hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px 90px;text-align:center;}
+.sys-lbl{font-size:.65rem;color:var(--muted);letter-spacing:.22em;margin-bottom:22px;}
+/* Glitch title */
+.glitch{position:relative;font-size:3.8rem;font-weight:700;color:var(--cyan);text-shadow:0 0 25px rgba(0,212,255,.45);letter-spacing:.06em;line-height:1;margin-bottom:6px;}
+.glitch::before,.glitch::after{content:attr(data-text);position:absolute;top:0;left:0;width:100%;overflow:hidden;}
+.glitch::before{color:var(--mag);animation:gb 5s infinite;clip-path:polygon(0 25%,100% 25%,100% 45%,0 45%);opacity:.8;}
+.glitch::after{color:var(--cyan);animation:ga 5s infinite;clip-path:polygon(0 65%,100% 65%,100% 80%,0 80%);opacity:.6;}
+@keyframes gb{0%,82%,100%{transform:translate(0)}84%{transform:translate(-4px,1px)}86%{transform:translate(4px,-1px)}88%{transform:translate(-2px)}}
+@keyframes ga{0%,87%,100%{transform:translate(0)}89%{transform:translate(3px)}91%{transform:translate(-3px,1px)}93%{transform:translate(1px)}}
+.subtitle{font-size:.72rem;color:var(--muted);letter-spacing:.2em;margin-bottom:60px;}
+/* Cards */
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:620px;width:100%;}
+.card{position:relative;background:var(--card);border:1px solid rgba(0,212,255,.18);padding:26px 22px;text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:8px;transition:all .3s;backdrop-filter:blur(6px);}
+/* Corner brackets */
+.card::before,.card::after,.card .br,.card .bl{content:'';position:absolute;width:13px;height:13px;border-color:var(--cyan);border-style:solid;opacity:.6;transition:all .3s;}
+.card::before{top:-1px;left:-1px;border-width:1px 0 0 1px;}
+.card::after{top:-1px;right:-1px;border-width:1px 1px 0 0;}
+.card .br{bottom:-1px;right:-1px;border-width:0 1px 1px 0;}
+.card .bl{bottom:-1px;left:-1px;border-width:0 0 1px 1px;}
+.card:hover{border-color:rgba(0,212,255,.5);background:rgba(0,30,55,.9);box-shadow:0 0 40px rgba(0,212,255,.08),inset 0 0 20px rgba(0,212,255,.03);}
+.card:hover::before,.card:hover::after,.card:hover .br,.card:hover .bl{width:20px;height:20px;opacity:1;filter:drop-shadow(0 0 4px var(--cyan));}
+.card-mod{font-size:.6rem;color:var(--muted);letter-spacing:.18em;margin-bottom:2px;}
+.card-icon{font-size:2rem;line-height:1;filter:drop-shadow(0 0 6px rgba(0,212,255,.3));}
+.card-title{font-size:.95rem;font-weight:700;color:var(--cyan);text-shadow:0 0 12px rgba(0,212,255,.35);}
+.card-desc{font-size:.72rem;color:var(--muted);line-height:1.55;}
+.card-stat{font-size:.68rem;color:var(--mag);border:1px solid rgba(255,0,170,.22);padding:3px 9px;align-self:flex-start;margin-top:6px;letter-spacing:.06em;}
+#bg-input{display:none;}
+@media(max-width:540px){.cards{grid-template-columns:1fr;}.glitch{font-size:2.4rem;}}
+</style>
+</head>
+<body id="body">
+<input type="file" id="bg-input" accept="image/*" onchange="pickBg(this)">
+<div class="scan"></div>
+<div class="wrap">
+  <div class="topbar">
+    <div class="status">
+      <span><span class="dot"></span><span id="online-lbl">SYSTEM ONLINE</span></span>
+      <span id="clock"></span>
+    </div>
+    <div class="tr">
+      <button class="bgb" id="bg-btn" onclick="document.getElementById('bg-input').click()"></button>
+      <button class="lb" id="l-de" onclick="setLang('de')">DE</button>
+      <button class="lb" id="l-en" onclick="setLang('en')">EN</button>
+    </div>
+  </div>
+  <div class="hero">
+    <div class="sys-lbl">SYS://DAILY-TRACKER/v2.0</div>
+    <div class="glitch" data-text="DAILY_TRACKER">DAILY_TRACKER</div>
+    <div class="subtitle" id="sub"></div>
+    <div class="cards">
+      <a class="card" href="daily-tracker.html?tab=todos">
+        <span class="br"></span><span class="bl"></span>
+        <div class="card-mod">MODULE_01</div>
+        <div class="card-icon">✅</div>
+        <div class="card-title" id="ct1"></div>
+        <div class="card-desc" id="cd1"></div>
+        <div class="card-stat" id="cs1"></div>
+      </a>
+      <a class="card" href="daily-tracker.html?tab=sport">
+        <span class="br"></span><span class="bl"></span>
+        <div class="card-mod">MODULE_02</div>
+        <div class="card-icon">🏃</div>
+        <div class="card-title" id="ct2"></div>
+        <div class="card-desc" id="cd2"></div>
+        <div class="card-stat" id="cs2"></div>
+      </a>
+    </div>
+  </div>
+</div>
+<script>
+const BG_KEY='dt-bg',LANG_KEY='dt-lang',DATA_KEY='daily-tracker-v2';
+const T={
+  de:{sub:'// PERSÖNLICHER FORTSCHRITTS-TRACKER',ct1:'TODOS & FORTSCHRITT',cd1:'Tägliche Aufgaben tracken',ct2:'SPORT AKTIVITÄTEN',cd2:'Training aufzeichnen',s1:'HEUTE ERLEDIGT',s2:'MIN/WOCHE',bg:'[BG_IMG]',online:'SYSTEM ONLINE',days:['So','Mo','Di','Mi','Do','Fr','Sa']},
+  en:{sub:'// PERSONAL PROGRESS TRACKER',ct1:'TODOS & PROGRESS',cd1:'Track daily tasks',ct2:'SPORT ACTIVITIES',cd2:'Log your workouts',s1:'DONE TODAY',s2:'MIN/WEEK',bg:'[BG_IMG]',online:'SYSTEM ONLINE',days:['Sun','Mon','Tue','Wed','Thu','Fri','Sat']}
+};
+let lang=localStorage.getItem(LANG_KEY)||'de';
+function t(k){return T[lang][k]||k;}
+function setLang(l){lang=l;localStorage.setItem(LANG_KEY,l);render();}
+function todayStr(){return new Date().toISOString().split('T')[0];}
+function getStats(){
+  let d;try{d=JSON.parse(localStorage.getItem(DATA_KEY))||{todos:[],completions:{},activities:[]};}catch{d={todos:[],completions:{},activities:[]};}
+  const day=todayStr(),active=(d.todos||[]).filter(x=>x.active),comp=d.completions[day]||{};
+  let p=0;if(active.length){const sum=active.reduce((s,x)=>{const v=Array.isArray(comp)?(comp.includes(x.id)?1:0):(comp[x.id]||0);return s+(x.type==='count'?Math.min(v/(x.target||1),1):(v?1:0));},0);p=Math.round(sum/active.length*100);}
+  const wds=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-(6-i));return d.toISOString().split('T')[0];});
+  const wm=(d.activities||[]).filter(a=>wds.includes(a.date)).reduce((s,a)=>s+a.duration,0);
+  return{p,wm};
+}
+function set(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
+function render(){
+  document.getElementById('root').lang=lang;
+  set('sub',t('sub'));set('ct1',t('ct1'));set('cd1',t('cd1'));set('ct2',t('ct2'));set('cd2',t('cd2'));
+  set('bg-btn',t('bg'));set('online-lbl',t('online'));
+  document.getElementById('l-de').classList.toggle('active',lang==='de');
+  document.getElementById('l-en').classList.toggle('active',lang==='en');
+  const s=getStats();
+  set('cs1',`${t('s1')}: ${s.p}%`);set('cs2',`${t('s2')}: ${s.wm}`);
+}
+function pickBg(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{localStorage.setItem(BG_KEY,e.target.result);applyBg(e.target.result);};r.readAsDataURL(f);}
+function applyBg(url){document.getElementById('body').style.backgroundImage=`url(${url})`;}
+function updateClock(){const n=new Date(),pad=x=>String(x).padStart(2,'0');set('clock',`${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`);}
+const savedBg=localStorage.getItem(BG_KEY);if(savedBg)applyBg(savedBg);
+render();updateClock();setInterval(updateClock,1000);
+</script>
+</body>
+</html>

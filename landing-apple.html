@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="de" id="root">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Daily Tracker</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',sans-serif;min-height:100vh;background:#000;color:#fff;overflow-x:hidden;-webkit-font-smoothing:antialiased;}
+body.has-bg::after{content:'';position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:0;pointer-events:none;}
+.wrap{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;}
+/* Nav */
+nav{display:flex;justify-content:space-between;align-items:center;padding:14px 28px;border-bottom:1px solid rgba(255,255,255,.07);}
+.nav-logo{font-size:.95rem;font-weight:600;letter-spacing:-.01em;color:rgba(255,255,255,.85);}
+.nav-right{display:flex;align-items:center;gap:8px;}
+.pill{padding:5px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.5);font-size:.78rem;font-family:inherit;font-weight:500;cursor:pointer;transition:all .22s;}
+.pill.active{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.3);}
+.pill:hover:not(.active){background:rgba(255,255,255,.06);color:rgba(255,255,255,.8);}
+/* Hero */
+.hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 24px 100px;text-align:center;}
+.eyebrow{font-size:.8rem;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:20px;}
+.headline{font-size:4rem;font-weight:700;letter-spacing:-.03em;line-height:1.07;margin-bottom:16px;color:#fff;}
+.headline em{font-style:normal;color:rgba(255,255,255,.4);}
+.tagline{font-size:1.05rem;font-weight:400;color:rgba(255,255,255,.5);max-width:380px;line-height:1.55;margin-bottom:64px;}
+/* Cards */
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:620px;width:100%;}
+.card{background:#1c1c1e;border-radius:20px;padding:28px 24px;text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:10px;transition:all .3s cubic-bezier(.25,.46,.45,.94);border:1px solid rgba(255,255,255,.06);}
+.card:hover{background:#2c2c2e;transform:scale(1.025);box-shadow:0 20px 60px rgba(0,0,0,.6);}
+.card-icon{font-size:2.4rem;line-height:1;margin-bottom:4px;}
+.card-title{font-size:1.05rem;font-weight:600;letter-spacing:-.01em;color:#fff;}
+.card-desc{font-size:.82rem;color:rgba(255,255,255,.45);line-height:1.45;}
+.card-stat{display:inline-flex;align-items:center;gap:5px;margin-top:10px;font-size:.78rem;font-weight:500;color:#0a84ff;}
+.card-stat-dot{width:5px;height:5px;border-radius:50%;background:#0a84ff;}
+.card-chevron{margin-top:auto;padding-top:14px;font-size:.78rem;color:rgba(255,255,255,.2);display:flex;justify-content:flex-end;}
+/* Stat bar at bottom */
+.stat-bar{display:flex;justify-content:center;gap:40px;padding:20px;border-top:1px solid rgba(255,255,255,.06);}
+.stat-item{text-align:center;}
+.stat-num{font-size:1.4rem;font-weight:600;letter-spacing:-.02em;color:#fff;}
+.stat-lbl{font-size:.72rem;color:rgba(255,255,255,.35);margin-top:2px;font-weight:400;}
+#bg-input{display:none;}
+@media(max-width:560px){.cards{grid-template-columns:1fr;}.headline{font-size:2.6rem;}.stat-bar{gap:24px;}}
+</style>
+</head>
+<body id="body">
+<input type="file" id="bg-input" accept="image/*" onchange="pickBg(this)">
+<div class="wrap">
+  <nav>
+    <span class="nav-logo">✦ Daily Tracker</span>
+    <div class="nav-right">
+      <button class="pill" id="bg-btn" onclick="document.getElementById('bg-input').click()"></button>
+      <button class="pill" id="l-de" onclick="setLang('de')">DE</button>
+      <button class="pill" id="l-en" onclick="setLang('en')">EN</button>
+    </div>
+  </nav>
+
+  <div class="hero">
+    <div class="eyebrow" id="eyebrow"></div>
+    <h1 class="headline" id="headline"></h1>
+    <p class="tagline" id="tagline"></p>
+    <div class="cards">
+      <a class="card" href="daily-tracker.html?tab=todos">
+        <div class="card-icon">✅</div>
+        <div class="card-title" id="ct1"></div>
+        <div class="card-desc" id="cd1"></div>
+        <div class="card-stat"><span class="card-stat-dot"></span><span id="cs1"></span></div>
+        <div class="card-chevron">›</div>
+      </a>
+      <a class="card" href="daily-tracker.html?tab=sport">
+        <div class="card-icon">🏃</div>
+        <div class="card-title" id="ct2"></div>
+        <div class="card-desc" id="cd2"></div>
+        <div class="card-stat"><span class="card-stat-dot" style="background:#30d158"></span><span id="cs2" style="color:#30d158"></span></div>
+        <div class="card-chevron">›</div>
+      </a>
+    </div>
+  </div>
+
+  <div class="stat-bar">
+    <div class="stat-item"><div class="stat-num" id="st1">—</div><div class="stat-lbl" id="stl1"></div></div>
+    <div class="stat-item"><div class="stat-num" id="st2">—</div><div class="stat-lbl" id="stl2"></div></div>
+    <div class="stat-item"><div class="stat-num" id="st3">—</div><div class="stat-lbl" id="stl3"></div></div>
+  </div>
+</div>
+<script>
+const BG_KEY='dt-bg',LANG_KEY='dt-lang',DATA_KEY='daily-tracker-v2';
+const T={
+  de:{eyebrow:'Persönlicher Tracker',hl:'Dein Tag.\nOrganisiert.',tag:'Behalte deine täglichen Aufgaben und deinen Sport im Blick — alles an einem Ort.',ct1:'Todos & Fortschritt',cd1:'Tägliche Aufgaben verwalten, tracken und auswerten.',ct2:'Sport Aktivitäten',cd2:'Training aufzeichnen und Fortschritte visualisieren.',s1:'Heute erledigt',s2:'Min. Sport diese Woche',bg:'Hintergrundbild',stl1:'Todos heute',stl2:'Streak',stl3:'Aktivitäten',days:['So','Mo','Di','Mi','Do','Fr','Sa'],months:['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez']},
+  en:{eyebrow:'Personal tracker',hl:'Your day.\nOrganized.',tag:'Keep track of your daily tasks and sports activities — everything in one place.',ct1:'Todos & Progress',cd1:'Manage, track and review your daily tasks.',ct2:'Sports Activities',cd2:'Log workouts and visualize your progress.',s1:'Done today',s2:'Sport min. this week',bg:'Background',stl1:'Todos today',stl2:'Streak',stl3:'Activities',days:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],months:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']}
+};
+let lang=localStorage.getItem(LANG_KEY)||'de';
+function t(k){return T[lang][k]||k;}
+function setLang(l){lang=l;localStorage.setItem(LANG_KEY,l);render();}
+function todayStr(){return new Date().toISOString().split('T')[0];}
+function getStats(){
+  let d;try{d=JSON.parse(localStorage.getItem(DATA_KEY))||{todos:[],completions:{},activities:[]};}catch{d={todos:[],completions:{},activities:[]};}
+  const day=todayStr(),active=(d.todos||[]).filter(x=>x.active),comp=d.completions[day]||{};
+  let p=0;if(active.length){const sum=active.reduce((s,x)=>{const v=Array.isArray(comp)?(comp.includes(x.id)?1:0):(comp[x.id]||0);return s+(x.type==='count'?Math.min(v/(x.target||1),1):(v?1:0));},0);p=Math.round(sum/active.length*100);}
+  const wds=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-(6-i));return d.toISOString().split('T')[0];});
+  const wm=(d.activities||[]).filter(a=>wds.includes(a.date)).reduce((s,a)=>s+a.duration,0);
+  const totalAct=(d.activities||[]).length;
+  return{p,wm,totalAct,totalTodos:active.length};
+}
+function set(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
+function render(){
+  document.getElementById('root').lang=lang;
+  set('eyebrow',t('eyebrow'));
+  document.getElementById('headline').innerHTML=t('hl').replace('\n','<br>');
+  set('tagline',t('tag'));
+  set('ct1',t('ct1'));set('cd1',t('cd1'));set('ct2',t('ct2'));set('cd2',t('cd2'));
+  set('bg-btn',t('bg'));set('stl1',t('stl1'));set('stl2',t('stl2'));set('stl3',t('stl3'));
+  document.getElementById('l-de').classList.toggle('active',lang==='de');
+  document.getElementById('l-en').classList.toggle('active',lang==='en');
+  const s=getStats();
+  set('cs1',`${t('s1')}: ${s.p}%`);set('cs2',`${t('s2')}: ${s.wm}`);
+  set('st1',s.p+'%');set('st2','—');set('st3',s.totalAct);
+}
+function pickBg(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{localStorage.setItem(BG_KEY,e.target.result);applyBg(e.target.result);};r.readAsDataURL(f);}
+function applyBg(url){document.getElementById('body').style.backgroundImage=`url(${url})`;document.getElementById('body').classList.add('has-bg');}
+const savedBg=localStorage.getItem(BG_KEY);if(savedBg)applyBg(savedBg);
+render();
+</script>
+</body>
+</html>
