@@ -107,6 +107,9 @@ input[type=range]{width:100%;accent-color:var(--primary);cursor:pointer;}
 .cal-day{aspect-ratio:1;border-radius:5px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:.7rem;}
 .cal-day-num{font-weight:600;}
 .cal-day-pct{font-size:.55rem;margin-top:1px;}
+.cal-day.clickable{cursor:pointer;transition:filter .15s;}
+.cal-day.clickable:hover{filter:brightness(1.5);}
+.cal-dot{width:4px;height:4px;border-radius:50%;background:var(--primary);margin-top:2px;opacity:.8;}
 .legend{display:flex;gap:12px;margin-top:12px;font-size:.75rem;color:var(--muted);flex-wrap:wrap;}
 .leg-dot{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:middle;margin-right:3px;}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;}
@@ -233,6 +236,19 @@ input[type=range]{width:100%;accent-color:var(--primary);cursor:pointer;}
       <div class="card"><h2 id="h-schart"></h2><div class="chart-wrap"><canvas id="sport-chart"></canvas></div></div>
     </div>
   </div>
+  <div class="card mb">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <h2 id="h-sport-cal" style="margin-bottom:0"></h2>
+      <div style="display:flex;gap:5px;align-items:center">
+        <button class="btn-icon" onclick="sportCalNav(-1)">‹</button>
+        <span id="sport-cal-title" style="font-size:.82rem;font-weight:600;min-width:90px;text-align:center"></span>
+        <button class="btn-icon" onclick="sportCalNav(1)">›</button>
+      </div>
+    </div>
+    <div class="cal-headers" id="sport-cal-hdr"></div>
+    <div class="cal-grid" id="sport-cal-grid"></div>
+    <p style="font-size:.72rem;color:var(--muted);margin-top:8px" id="h-sport-cal-hint"></p>
+  </div>
   <p class="section-title" id="h-ahist"></p>
   <div class="card"><div id="activities-list"></div></div>
 </div>
@@ -300,6 +316,19 @@ input[type=range]{width:100%;accent-color:var(--primary);cursor:pointer;}
     <div class="card"><h2 id="h-slchart"></h2><div class="chart-wrap"><canvas id="sleep-chart"></canvas></div></div>
     <div class="card"><h2 id="h-hrchart"></h2><div class="chart-wrap"><canvas id="hr-chart"></canvas></div></div>
   </div>
+  <div class="card mb">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <h2 id="h-health-cal" style="margin-bottom:0"></h2>
+      <div style="display:flex;gap:5px;align-items:center">
+        <button class="btn-icon" onclick="healthCalNav(-1)">‹</button>
+        <span id="health-cal-title" style="font-size:.82rem;font-weight:600;min-width:90px;text-align:center"></span>
+        <button class="btn-icon" onclick="healthCalNav(1)">›</button>
+      </div>
+    </div>
+    <div class="cal-headers" id="health-cal-hdr"></div>
+    <div class="cal-grid" id="health-cal-grid"></div>
+    <p style="font-size:.72rem;color:var(--muted);margin-top:8px" id="h-health-cal-hint"></p>
+  </div>
   <p class="section-title" id="h-hlog-title"></p>
   <div class="card"><div id="health-log"></div></div>
 </div>
@@ -329,7 +358,8 @@ de:{
   eHealth:'Noch keine Einträge. Trage heute deine ersten Werte ein!',
   hStatW:'Aktuelles Gewicht',hStatK:'Kalorientziel',hStatSl:'Ø Schlaf (7 Tage)',hStatHR:'Ø Ruhepuls (7 Tage)',hDeleted:'Eintrag gelöscht',carbs:'Kohlenhydrate',
   fat:'Fett',hprot:'Eiweiß (g)',hcarbsi:'KH (g)',hfati:'Fett (g)',
-  updEntry:'Aktualisieren',editEntryH:'✏️ Eintrag bearbeiten',updAct:'Aktualisieren',editActH:'✏️ Aktivität bearbeiten',cancelEdit:'Abbrechen',todayBtn:'Heute',hUpdated:'Eintrag aktualisiert ✓',aUpdated:'Aktivität aktualisiert ✓'
+  updEntry:'Aktualisieren',editEntryH:'✏️ Eintrag bearbeiten',updAct:'Aktualisieren',editActH:'✏️ Aktivität bearbeiten',cancelEdit:'Abbrechen',todayBtn:'Heute',hUpdated:'Eintrag aktualisiert ✓',aUpdated:'Aktivität aktualisiert ✓',
+  hSportCal:'📅 Kalender',hHealthCal:'📅 Kalender',hCalHint:'Tage mit Einträgen anklicken zum Bearbeiten',hSportCalHint:'Datum anklicken um es im Formular zu übernehmen'
 },
 en:{
   back:'← Dashboard',tbTodos:'✅ Todos',tbSport:'🏃 Sport',tbHealth:'❤️ Health',
@@ -352,7 +382,8 @@ en:{
   eHealth:'No entries yet. Log your first values today!',
   hStatW:'Current weight',hStatK:'Calorie target',hStatSl:'Avg sleep (7 days)',hStatHR:'Avg resting HR (7 days)',hDeleted:'Entry deleted',carbs:'Carbs',
   fat:'Fat',hprot:'Protein (g)',hcarbsi:'Carbs (g)',hfati:'Fat (g)',
-  updEntry:'Update',editEntryH:'✏️ Edit entry',updAct:'Update',editActH:'✏️ Edit activity',cancelEdit:'Cancel',todayBtn:'Today',hUpdated:'Entry updated ✓',aUpdated:'Activity updated ✓'
+  updEntry:'Update',editEntryH:'✏️ Edit entry',updAct:'Update',editActH:'✏️ Edit activity',cancelEdit:'Cancel',todayBtn:'Today',hUpdated:'Entry updated ✓',aUpdated:'Activity updated ✓',
+  hSportCal:'📅 Calendar',hHealthCal:'📅 Calendar',hCalHint:'Click a day with data to edit it',hSportCalHint:'Click a date to select it in the form'
 }
 };
 const THEME_KEY='dt-theme',LANG_KEY='dt-lang',BG_KEY='dt-bg',DATA_KEY='daily-tracker-v2',HEALTH_KEY='daily-tracker-health';
@@ -363,6 +394,8 @@ function t(k){return TR[lang][k]||k;}
 
 let calcGender='male',calcGoalType='maintain';
 let viewDate='',editActivityId=null,editHealthId=null;
+let sportCY=new Date().getFullYear(),sportCM=new Date().getMonth();
+let healthCY=new Date().getFullYear(),healthCM=new Date().getMonth();
 function setCalcGender(g){calcGender=g;document.getElementById('calc-male').classList.toggle('active',g==='male');document.getElementById('calc-female').classList.toggle('active',g==='female');}
 function setCalcGoalType(g){calcGoalType=g;['fat','maintain','muscle','athletic'].forEach(x=>document.getElementById('gt-'+x).classList.toggle('active',x===g));}
 
@@ -386,6 +419,10 @@ function applyLang(){
   s('h-add-act',t('hAddAct'));s('lbl-stype',t('lSType'));s('lbl-scustom',t('lSCustom'));ph('sport-custom',t('sHolder'));s('lbl-sdate',t('lDate'));s('lbl-sdur',t('lDur'));ph('sport-duration',t('durHolder'));s('lbl-sint',t('lInt'));s('lbl-snote',t('lNote'));ph('sport-notes',t('noteHolder'));s('save-btn',t('saveBtn'));s('h-schart',t('hSChart'));s('h-ahist',t('hAHist'));s('bg-btn',t('bgBtn'));s('int-low',t('iLow'));s('int-med',t('iMed'));s('int-high',t('iHigh'));
   s('h-log-title',t('hLogH'));s('lbl-hdate',t('lblHDate'));s('lbl-hweight',t('lblHWeight'));s('lbl-hr',t('lblHR'));s('lbl-sleeph',t('lblSleepH'));s('lbl-sleepq',t('lblSleepQ'));s('lbl-recov',t('lblRecov'));s('lbl-hkcal',t('lblHKcal'));s('lbl-hsteps',t('lblHSteps'));s('lbl-hnotes',t('lblHNotes'));s('h-add-btn',t('hSaveH'));
   s('lbl-hprot',t('hprot'));s('lbl-hcarbs',t('hcarbsi'));s('lbl-hfat',t('hfati'));s('h-cancel-btn',t('cancelEdit'));s('sport-cancel-btn',t('cancelEdit'));s('today-jump-btn',t('todayBtn'));
+  s('h-sport-cal',t('hSportCal'));s('h-health-cal',t('hHealthCal'));s('h-health-cal-hint',t('hCalHint'));s('h-sport-cal-hint',t('hSportCalHint'));
+  const chd=t('calD').map(d=>`<div class="cal-header">${d}</div>`).join('');
+  const sph=document.getElementById('sport-cal-hdr');if(sph)sph.innerHTML=chd;
+  const hch=document.getElementById('health-cal-hdr');if(hch)hch.innerHTML=chd;
   s('h-calc-title',t('hCalcT'));s('lbl-cgender',t('calcGender'));s('calc-male',t('calcMale'));s('calc-female',t('calcFemale'));s('lbl-cage',t('calcAge'));s('lbl-cheight',t('calcHeight'));s('lbl-ccw',t('calcCW'));s('lbl-cact',t('calcAct'));s('lbl-cgoal',t('calcGoalR'));s('lbl-cgoalt',t('calcGoalT'));s('gt-fat',t('gtFat'));s('gt-maintain',t('gtMaintain'));s('gt-muscle',t('gtMuscle'));s('gt-athletic',t('gtAthletic'));s('h-calc-btn',t('calcBtn'));
   s('h-wchart',t('hWChart'));s('h-kchart',t('hKChart'));s('h-slchart',t('hSlChart'));s('h-hrchart',t('hHRChart'));s('h-hlog-title',t('hHLog'));
   document.getElementById('l-de').classList.toggle('active',lang==='de');document.getElementById('l-en').classList.toggle('active',lang==='en');
@@ -460,7 +497,8 @@ function renderManage(){const el=document.getElementById('todos-manage');if(!dat
 let chartP=null;
 function renderProgressChart(){const primary=getCSSVar('--primary');const grid=getCSSVar('--chart-grid');const days=dateRange(30),labels=days.map(d=>{const[,m,dy]=d.split('-');return`${dy}.${m}`;}),vals=days.map(d=>pct(d));const colors=vals.map(v=>v===100?'rgba(74,222,128,.9)':v>=80?'rgba(74,222,128,.65)':v>=50?'rgba(74,222,128,.4)':v>0?'rgba(74,222,128,.2)':'rgba(255,255,255,.04)');if(chartP){chartP.data.labels=labels;chartP.data.datasets[0].data=vals;chartP.data.datasets[0].backgroundColor=colors;chartP.update('none');return;}Chart.defaults.color=getCSSVar('--muted');chartP=new Chart(document.getElementById('progress-chart'),{type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:colors,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%',font:{size:10}},grid:{color:grid}},x:{ticks:{font:{size:9},maxRotation:45},grid:{display:false}}}}});}
 function renderWeek(){const days=dateRange(7),today=todayStr();document.getElementById('week-overview').innerHTML=days.map(d=>{const p=pct(d),h=Math.round(p*.6),dt=new Date(d),isT=d===today;return`<div class="wday${isT?' today':''}"><div class="wday-label">${t('calD')[(dt.getDay()+6)%7]}</div><div class="wday-bar">${p>0?`<span class="wday-pct">${p}%</span>`:''}<div class="wday-fill" style="height:${h}px"></div></div><div class="wday-date">${dt.getDate()}.${dt.getMonth()+1}</div></div>`;}).join('');}
-function renderMonthCal(){const now=new Date(),y=now.getFullYear(),m=now.getMonth();document.getElementById('h-month').textContent=`📅 ${t('months')[m]} ${y}`;const days=new Date(y,m+1,0).getDate(),first=(new Date(y,m,1).getDay()+6)%7,today=todayStr();let html='';for(let i=0;i<first;i++)html+='<div class="cal-day"></div>';for(let d=1;d<=days;d++){const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;const p=pct(ds),isFuture=ds>today,isToday=ds===today;let bg='rgba(255,255,255,.04)',fg=isFuture?'rgba(255,255,255,.15)':'rgba(255,255,255,.3)';if(!isFuture&&p>0){if(p===100){bg='rgba(74,222,128,.9)';fg='#052e16';}else if(p>=80){bg='rgba(74,222,128,.65)';fg='#052e16';}else if(p>=50){bg='rgba(74,222,128,.4)';fg='#e8f5e9';}else{bg='rgba(74,222,128,.2)';fg='#a7f3d0';}}html+=`<div class="cal-day" style="background:${bg};color:${fg};${isToday?'outline:2px solid var(--primary);outline-offset:1px;':''}" title="${fmtDate(ds)}${p>0?': '+p+'%':''}"><span class="cal-day-num">${d}</span>${p>0?`<span class="cal-day-pct">${p}%</span>`:''}</div>`;}document.getElementById('month-cal').innerHTML=html;}
+function renderMonthCal(){const now=new Date(),y=now.getFullYear(),m=now.getMonth();document.getElementById('h-month').textContent=`📅 ${t('months')[m]} ${y}`;const days=new Date(y,m+1,0).getDate(),first=(new Date(y,m,1).getDay()+6)%7,today=todayStr();let html='';for(let i=0;i<first;i++)html+='<div class="cal-day"></div>';for(let d=1;d<=days;d++){const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;const p=pct(ds),isFuture=ds>today,isToday=ds===today,isSel=ds===viewDate;let bg='rgba(255,255,255,.04)',fg=isFuture?'rgba(255,255,255,.15)':'rgba(255,255,255,.3)';let extra='';if(!isFuture&&p>0){if(p===100){bg='rgba(74,222,128,.9)';fg='#052e16';}else if(p>=80){bg='rgba(74,222,128,.65)';fg='#052e16';}else if(p>=50){bg='rgba(74,222,128,.4)';fg='#e8f5e9';}else{bg='rgba(74,222,128,.2)';fg='#a7f3d0';}}if(isToday)extra+='outline:2px solid var(--primary);outline-offset:1px;';if(isSel)extra+='box-shadow:inset 0 0 0 2.5px rgba(255,255,255,.7);';html+=`<div class="cal-day${!isFuture?' clickable':''}" style="background:${bg};color:${fg};${extra}" title="${fmtDate(ds)}${p>0?': '+p+'%':''}"${!isFuture?` onclick="selectTodoDay('${ds}')"`:''}><span class="cal-day-num">${d}</span>${p>0?`<span class="cal-day-pct">${p}%</span>`:''}</div>`;}document.getElementById('month-cal').innerHTML=html;}
+function selectTodoDay(ds){if(ds>todayStr())return;viewDate=ds;renderTodayPanel();renderMonthCal();document.getElementById('today-todos').scrollIntoView({behavior:'smooth',block:'nearest'});}
 function renderTodos(){renderTodayPanel();renderManage();renderProgressChart();renderWeek();renderMonthCal();}
 
 let chartS=null;
@@ -478,7 +516,49 @@ function deleteActivity(id){if(editActivityId===id)cancelEditActivity();data.act
 function renderSportStats(){const acts=data.activities,tm=acts.reduce((s,a)=>s+a.duration,0);const wds=dateRange(7),wm=acts.filter(a=>wds.includes(a.date)).reduce((s,a)=>s+a.duration,0);const counts={};acts.forEach(a=>counts[a.type]=(counts[a.type]||0)+1);const top=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];document.getElementById('sport-stats').innerHTML=`<div class="stat-card"><div class="stat-num">${(tm/60).toFixed(1)}</div><div class="stat-lbl">${t('sTotal')}</div></div><div class="stat-card"><div class="stat-num">${wm}</div><div class="stat-lbl">${t('sWeek')}</div></div><div class="stat-card"><div class="stat-num">${top?(acts.find(a=>a.type===top[0])?.emoji||'💪'):'—'}</div><div class="stat-lbl">${top?esc(top[0]):t('sNone')}</div></div>`;}
 function renderActivities(){const el=document.getElementById('activities-list');const sorted=[...data.activities].sort((a,b)=>b.date.localeCompare(a.date));if(!sorted.length){el.innerHTML=`<div class="empty"><div class="ico">🏃</div>${t('eA')}</div>`;return;}const iL={low:t('iLS'),medium:t('iMS'),high:t('iHS')},iC={low:'badge-low',medium:'badge-medium',high:'badge-high'};el.innerHTML=sorted.map(a=>{const h=Math.floor(a.duration/60),mn=a.duration%60,dur=h>0?`${h}h ${mn}min`:`${mn}min`;return`<div class="act-item"><div class="act-icon">${esc(a.emoji)}</div><div class="act-info"><div class="act-name">${esc(a.type)} <span class="badge ${iC[a.intensity]}">${iL[a.intensity]}</span></div><div class="act-meta">${fmtDate(a.date)} · ${dur}${a.notes?' · '+esc(a.notes):''}</div></div><button class="btn-icon" onclick="editActivity('${a.id}')" title="${lang==='de'?'Bearbeiten':'Edit'}">✏️</button><button class="btn-icon" onclick="deleteActivity('${a.id}')">🗑️</button></div>`;}).join('');}
 function renderSportChart(){const primary=getCSSVar('--primary'),grid=getCSSVar('--chart-grid');const weeks=[];for(let i=7;i>=0;i--){const mon=new Date();mon.setDate(mon.getDate()-(mon.getDay()+6)%7-i*7);mon.setHours(0,0,0,0);const sun=new Date(mon);sun.setDate(sun.getDate()+6);weeks.push({label:`${mon.getDate()}.${mon.getMonth()+1}`,start:mon,end:sun});}const labels=weeks.map(w=>w.label),vals=weeks.map(w=>data.activities.filter(a=>{const d=new Date(a.date);return d>=w.start&&d<=w.end;}).reduce((s,a)=>s+a.duration,0));if(chartS){chartS.data.labels=labels;chartS.data.datasets[0].data=vals;chartS.update('none');return;}chartS=new Chart(document.getElementById('sport-chart'),{type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:primary+'22',borderColor:primary,borderWidth:2,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:0,ticks:{callback:v=>v+' Min',font:{size:10}},grid:{color:grid}},x:{ticks:{font:{size:11}},grid:{display:false}}}}});}
-function renderSport(){renderSportStats();renderActivities();renderSportChart();}
+function renderSport(){renderSportStats();renderActivities();renderSportChart();renderSportCal();}
+
+// ── Shared calendar widget ─────────────────────────────────
+function calWidget(gridId,titleId,year,month,selected,markFn,clickFn){
+  const today=todayStr(),fd=(new Date(year,month,1).getDay()+6)%7,dm=new Date(year,month+1,0).getDate();
+  const el=document.getElementById(titleId);if(el)el.textContent=`${t('months')[month]} ${year}`;
+  let h='';
+  for(let i=0;i<fd;i++)h+='<div class="cal-day"></div>';
+  for(let d=1;d<=dm;d++){
+    const ds=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isF=ds>today,isT=ds===today,isSel=ds===selected,mark=markFn?markFn(ds):0;
+    let bg='rgba(255,255,255,.04)',clr=isF?'rgba(255,255,255,.12)':'rgba(255,255,255,.55)',extra='';
+    if(isSel){bg='var(--primary)';clr='var(--bg)';}
+    else if(mark)bg='rgba(255,255,255,.1)';
+    if(isT&&!isSel)extra='outline:2px solid var(--primary);outline-offset:1px;';
+    const click=!isF&&clickFn?` onclick="${clickFn}('${ds}')"`:'';
+    h+=`<div class="cal-day${!isF?' clickable':''}" style="background:${bg};color:${clr};${extra}"${click} title="${ds}"><span class="cal-day-num">${d}</span>${mark&&!isSel?'<span class="cal-dot"></span>':''}</div>`;
+  }
+  document.getElementById(gridId).innerHTML=h;
+}
+
+// ── Sport calendar ─────────────────────────────────────────
+function renderSportCal(){
+  const sel=document.getElementById('sport-date')?.value||todayStr();
+  const actDates=new Set(data.activities.map(a=>a.date));
+  calWidget('sport-cal-grid','sport-cal-title',sportCY,sportCM,sel,ds=>actDates.has(ds)?1:0,'pickSportDay');
+}
+function sportCalNav(d){const dt=new Date(sportCY,sportCM+d);sportCY=dt.getFullYear();sportCM=dt.getMonth();renderSportCal();}
+function pickSportDay(ds){document.getElementById('sport-date').value=ds;renderSportCal();}
+
+// ── Health calendar ────────────────────────────────────────
+function renderHealthCal(){
+  const sel=document.getElementById('h-date')?.value||todayStr();
+  const entryDates=new Set(healthData.entries.map(e=>e.date));
+  calWidget('health-cal-grid','health-cal-title',healthCY,healthCM,sel,ds=>entryDates.has(ds)?1:0,'pickHealthDay');
+}
+function healthCalNav(d){const dt=new Date(healthCY,healthCM+d);healthCY=dt.getFullYear();healthCM=dt.getMonth();renderHealthCal();}
+function pickHealthDay(ds){
+  const entries=[...healthData.entries].filter(e=>e.date===ds).sort((a,b)=>b.id.localeCompare(a.id));
+  if(entries.length){editHealthEntry(entries[0].id);}
+  else{cancelEditHealth();document.getElementById('h-date').value=ds;document.getElementById('h-date').scrollIntoView({behavior:'smooth',block:'center'});}
+  renderHealthCal();
+}
 
 // ── Health ────────────────────────────────────────────────
 let chartW=null,chartKH=null,chartSL=null,chartHR=null;
@@ -592,7 +672,7 @@ function renderHealthLog(){
   }).join('');
 }
 function renderHealth(){
-  renderHealthStats();renderWeightChart();renderKcalHealthChart();renderSleepChart();renderHRChart();renderHealthLog();
+  renderHealthStats();renderWeightChart();renderKcalHealthChart();renderSleepChart();renderHRChart();renderHealthLog();renderHealthCal();
   if(healthData.profile?.target){const r=document.getElementById('calc-res');if(r&&r.style.display==='none'){const p=healthData.profile;setCalcGender(p.gender||'male');setCalcGoalType(p.goalType||'maintain');['calc-age','calc-height','calc-cw'].forEach((id,i)=>{const v=[p.age,p.height,p.weight][i];const el=document.getElementById(id);if(el&&v)el.value=v;});calculateTDEE();}}
 }
 
