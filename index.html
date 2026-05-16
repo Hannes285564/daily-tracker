@@ -1,12 +1,20 @@
 <!DOCTYPE html>
-<html data-theme="aurora" lang="de" id="root">
+<html data-theme="performance" lang="de" id="root">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Daily Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root,[data-theme="aurora"]{--bg:#07030f;--surface:rgba(255,255,255,.05);--border:rgba(255,255,255,.1);--text:#f0eafa;--muted:rgba(255,255,255,.4);--primary:#a78bfa;--accent:#34d399;--font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--radius:20px;--chb:rgba(167,139,250,.4);--sb:rgba(167,139,250,.12);--sc:#a78bfa;}
 [data-theme="apple"]{--bg:#000;--surface:#1c1c1e;--border:rgba(255,255,255,.07);--text:#fff;--muted:rgba(255,255,255,.45);--primary:#0a84ff;--accent:#30d158;--font:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;--radius:18px;--chb:rgba(255,255,255,.15);--sb:rgba(10,132,255,.12);--sc:#0a84ff;}
 [data-theme="forest"]{--bg:#030c07;--surface:rgba(52,211,153,.04);--border:rgba(52,211,153,.14);--text:#e8f5e9;--muted:rgba(180,230,195,.42);--primary:#34d399;--accent:#2dd4bf;--font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--radius:14px;--chb:rgba(52,211,153,.45);--sb:rgba(52,211,153,.1);--sc:#34d399;}
+[data-theme="performance"]{--bg:#0a0a0a;--surface:#141414;--border:rgba(255,255,255,.08);--text:#f5f5f5;--muted:#6b7280;--primary:#5eead4;--accent:#4ade80;--font:'Outfit',-apple-system,BlinkMacSystemFont,sans-serif;--radius:16px;--chb:rgba(94,234,212,.3);--sb:rgba(94,234,212,.1);--sc:#5eead4;}
+[data-theme="performance"] .wrap{background:#0a0a0a;}
+[data-theme="performance"] .bcard{background:#141414;backdrop-filter:none;-webkit-backdrop-filter:none;}
+[data-theme="performance"] .bcard:hover{background:#1c1c1c;box-shadow:0 22px 52px rgba(0,0,0,.6);}
+[data-theme="performance"] .headline{color:#f5f5f5;-webkit-text-fill-color:#f5f5f5;background:none;}
+[data-theme="performance"] .date-badge{display:inline-flex;backdrop-filter:none;}
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:var(--font);min-height:100vh;background:var(--bg) center/cover fixed;color:var(--text);overflow-x:hidden;}
 /* bg layers */
@@ -54,7 +62,7 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:14px 2
 .tagline{font-size:.96rem;color:var(--muted);max-width:380px;line-height:1.6;margin-bottom:44px;}
 
 /* ── Bento grid ─────────────────────────────────────────── */
-.bento{display:grid;grid-template-columns:3fr 2fr;gap:14px;max-width:740px;width:100%;}
+.bento{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;max-width:920px;width:100%;}
 /* bcard base */
 .bcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;color:inherit;display:flex;flex-direction:column;transition:all .32s cubic-bezier(.25,.46,.45,.94);position:relative;overflow:hidden;}
 /* shine sweep on hover */
@@ -80,11 +88,36 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:14px 2
 .bfc-prog-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:999px;transition:width .5s ease;}
 .bfc-chart-lbl{font-size:.68rem;color:var(--muted);margin-bottom:7px;letter-spacing:.04em;text-transform:uppercase;}
 /* Medium card (sport) */
-.bcard-md{padding:22px 20px;grid-column:1;}
+.bcard-md{padding:22px 20px;grid-column:1/3;}
 .bcard-md:hover{transform:translateY(-5px);}
 /* Small card (health) */
-.bcard-sm{padding:20px 18px;grid-column:2;}
+.bcard-sm{padding:20px 18px;grid-column:3/5;}
 .bcard-sm:hover{transform:translateY(-5px);}
+/* Plan card */
+.bcard-plan{padding:20px 18px;grid-column:5/7;}
+.bcard-plan:hover{transform:translateY(-5px);}
+/* Daily todos card */
+.bcard-dtodo{padding:20px 18px;grid-column:1/-1;}
+.bcard-dtodo:hover{transform:translateY(-5px);}
+/* Score card */
+.bcard-score{grid-column:1/-1;flex-direction:row;gap:0;align-items:stretch;padding:0;}
+.bcard-score:hover{transform:translateY(-4px);}
+.score-l{padding:22px 26px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;flex-shrink:0;border-right:1px solid var(--border);min-width:110px;}
+.score-num{font-size:2.6rem;font-weight:800;letter-spacing:-.04em;line-height:1;transition:color .3s;}
+.score-tier{font-size:.68rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
+.score-r{flex:1;padding:18px 22px;display:flex;flex-direction:column;justify-content:center;gap:5px;}
+.score-r-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
+.score-r-title{font-size:.96rem;font-weight:700;letter-spacing:-.01em;}
+.score-r-badge{font-size:.72rem;font-weight:600;padding:3px 10px;border-radius:10px;background:var(--sb);color:var(--sc);border:1px solid rgba(167,139,250,.2);}
+.score-cats{display:grid;grid-template-columns:1fr 1fr;gap:5px 18px;}
+.score-cat-row{display:flex;align-items:center;gap:7px;}
+.score-cat-lbl{font-size:.69rem;color:var(--muted);white-space:nowrap;width:74px;flex-shrink:0;}
+.score-bar-bg{flex:1;height:4px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;}
+.score-bar-fill{height:100%;border-radius:999px;transition:width .5s ease;}
+.score-pts{font-size:.65rem;color:var(--muted);flex-shrink:0;width:28px;text-align:right;}
+/* Dtodo mini item */
+.dtodo-mini{font-size:.73rem;padding:3px 0;display:flex;align-items:center;gap:6px;color:var(--muted);}
+.dtodo-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
 /* theme specifics */
 [data-theme="aurora"] .bcard{backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);}
 [data-theme="forest"] .bcard{background:rgba(5,25,13,.55);backdrop-filter:blur(18px);border-color:rgba(52,211,153,.11);}
@@ -111,12 +144,21 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:14px 2
 .sbi .sbl{font-size:.7rem;color:var(--muted);text-align:center;margin-top:2px;}
 
 #bg-input{display:none;}
-@media(max-width:600px){
-  .bento{grid-template-columns:1fr;}
-  .bcard-feat{flex-direction:column;}
+@media(max-width:760px){
+  .bento{grid-template-columns:1fr 1fr;}
+  .bcard-feat{grid-column:1/-1;flex-direction:column;}
   .bfc-left{flex-direction:row;border-right:none;border-bottom:1px solid var(--border);padding:16px 20px;justify-content:flex-start;gap:12px;}
   .bfc-right{width:auto;padding:4px 20px 16px;}
-  .bcard-md,.bcard-sm{grid-column:1;}
+  .bcard-md{grid-column:1;}
+  .bcard-sm{grid-column:2;}
+  .bcard-plan{grid-column:1/-1;}
+  .bcard-score{flex-direction:column;}
+  .score-l{flex-direction:row;border-right:none;border-bottom:1px solid var(--border);padding:14px 18px;gap:14px;min-width:unset;justify-content:flex-start;}
+  .score-cats{grid-template-columns:1fr;}
+}
+@media(max-width:480px){
+  .bento{grid-template-columns:1fr;}
+  .bcard-md,.bcard-sm,.bcard-plan,.bcard-dtodo{grid-column:1;}
   .headline{font-size:2.4rem !important;}
   nav{padding:12px 16px;}
 }
@@ -131,7 +173,8 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:14px 2
     <span class="logo" id="logo-text">✦ Daily Tracker</span>
     <div class="nav-right">
       <div class="theme-sw">
-        <button class="ts-btn active" data-t="aurora" onclick="setTheme('aurora')" title="Aurora"><span style="background:linear-gradient(135deg,#1a0533,#a78bfa 60%,#34d399)"></span></button>
+        <button class="ts-btn active" data-t="performance" onclick="setTheme('performance')" title="Performance"><span style="background:linear-gradient(135deg,#0a0a0a 30%,#5eead4)"></span></button>
+        <button class="ts-btn" data-t="aurora" onclick="setTheme('aurora')" title="Aurora"><span style="background:linear-gradient(135deg,#1a0533,#a78bfa 60%,#34d399)"></span></button>
         <button class="ts-btn" data-t="apple" onclick="setTheme('apple')" title="Apple"><span style="background:linear-gradient(135deg,#111,#0a84ff)"></span></button>
         <button class="ts-btn" data-t="forest" onclick="setTheme('forest')" title="Forest"><span style="background:linear-gradient(135deg,#030c07,#065f46 55%,#2dd4bf)"></span></button>
       </div>
@@ -191,6 +234,43 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:14px 2
         <div class="bc-chart" id="chart-health"></div>
       </a>
 
+      <!-- TRAINING PLAN card -->
+      <a class="bcard bcard-plan" href="daily-tracker.html?tab=plan">
+        <div class="bc-head">
+          <div class="bc-icon" id="plan-card-icon">📋</div>
+          <div class="bc-badge" id="cs4"></div>
+        </div>
+        <div class="bc-title" id="ct4"></div>
+        <div class="bc-desc" id="cd4"></div>
+        <div id="plan-card-detail" style="margin-top:10px;font-size:.75rem;color:var(--muted)"></div>
+      </a>
+
+      <!-- DAILY TODOS card -->
+      <a class="bcard bcard-dtodo" href="daily-tracker.html?tab=todos">
+        <div class="bc-head">
+          <div class="bc-icon">⚡</div>
+          <div class="bc-badge" id="cs6"></div>
+        </div>
+        <div class="bc-title" id="ct6"></div>
+        <div id="dtodo-mini-list" style="margin-top:8px"></div>
+      </a>
+
+      <!-- SCORE card -->
+      <a class="bcard bcard-score" href="daily-tracker.html?tab=score">
+        <div class="score-l">
+          <div class="bc-icon">🎯</div>
+          <div class="score-num" id="score-val">—</div>
+          <div class="score-tier" id="score-tier-lbl"></div>
+        </div>
+        <div class="score-r">
+          <div class="score-r-head">
+            <div class="score-r-title" id="ct7"></div>
+            <div class="score-r-badge" id="cs7"></div>
+          </div>
+          <div class="score-cats" id="score-cats-mini"></div>
+        </div>
+      </a>
+
     </div>
   </div>
 
@@ -213,7 +293,11 @@ de:{
   ct1:'Todos & Fortschritt',cd1:'Tägliche Aufgaben verwalten und Fortschritt tracken.',
   ct2:'Sport Aktivitäten',cd2:'Training aufzeichnen, Wochenziele setzen und Muster erkennen.',
   ct3:'Gesundheit',cd3:'Gewicht, Puls & Schlaf im Überblick.',
-  s1:'Heute',s2:'Min./Woche',s3:'Gewicht',bg:'🖼 Hintergrundbild',
+  ct4:'Trainingsplan',cd4:'Aktiver Plan & Wochenfortschritt.',
+  ct5:'Kalender',ct6:'Tages-Todos',
+  planNoActive:'Noch kein aktiver Plan.',planWeekOf:'Woche',planOfL:'von',
+  calNoEv:'Keine Ereignisse heute.',dtodoNone:'Keine Tages-/Wochen-Todos.',
+  s1:'Heute',s2:'Std./Woche',s3:'Gewicht',bg:'🖼 Hintergrundbild',
   stl1:'Erledigt heute',stl2:'Sport diese Woche',stl3:'Aktuell',
   logo:'✦ Daily Tracker',logoF:'🌿 Daily Tracker',
   wk7:'7 Tage',noData:'Jetzt starten',
@@ -229,7 +313,11 @@ en:{
   ct1:'Todos & Progress',cd1:'Manage daily tasks and track your completion over time.',
   ct2:'Sports Activities',cd2:'Log workouts, set weekly goals and spot patterns.',
   ct3:'Health',cd3:'Weight, heart rate & sleep at a glance.',
-  s1:'Today',s2:'Min./week',s3:'Weight',bg:'🖼 Background',
+  ct4:'Training Plan',cd4:'Active plan & weekly progress.',
+  ct5:'Calendar',ct6:'Daily Todos',
+  planNoActive:'No active plan yet.',planWeekOf:'Week',planOfL:'of',
+  calNoEv:'No events today.',dtodoNone:'No daily/weekly todos.',
+  s1:'Today',s2:'h/week',s3:'Weight',bg:'🖼 Background',
   stl1:'Done today',stl2:'Sport this week',stl3:'Current',
   logo:'✦ Daily Tracker',logoF:'🌿 Daily Tracker',
   wk7:'7 days',noData:'Start tracking',
@@ -238,7 +326,7 @@ en:{
 }
 };
 
-let theme=localStorage.getItem(THEME_KEY)||'aurora';
+let theme=localStorage.getItem(THEME_KEY)||'performance';
 if(theme==='futuristic'){theme='forest';localStorage.setItem(THEME_KEY,'forest');}
 let lang=localStorage.getItem(LANG_KEY)||'de';
 
@@ -247,8 +335,59 @@ function setLang(l){lang=l;localStorage.setItem(LANG_KEY,l);render();}
 function todayStr(){return new Date().toISOString().split('T')[0];}
 function set(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
 
-function primaryColor(){return theme==='apple'?'#0a84ff':theme==='forest'?'#34d399':'#a78bfa';}
-function accentColor(){return theme==='apple'?'#30d158':theme==='forest'?'#2dd4bf':'#34d399';}
+function primaryColor(){return theme==='apple'?'#0a84ff':theme==='forest'?'#34d399':theme==='performance'?'#5eead4':'#a78bfa';}
+function accentColor(){return theme==='apple'?'#30d158':theme==='forest'?'#2dd4bf':theme==='performance'?'#4ade80':'#34d399';}
+
+function timeToMin(s){const[h,m]=(s||'00:00').split(':').map(Number);return h*60+(m||0);}
+
+function calcLandingScore(){
+  const ds=todayStr();
+  let d;try{d=JSON.parse(localStorage.getItem(DATA_KEY))||{todos:[],completions:{},activities:[]};}catch{d={todos:[],completions:{},activities:[]};}
+  let hd;try{hd=JSON.parse(localStorage.getItem('daily-tracker-health'))||{entries:[],profile:{}};}catch{hd={entries:[],profile:{}};}
+  let scoreData;try{scoreData=JSON.parse(localStorage.getItem('daily-tracker-scores'))||{byDate:{}};}catch{scoreData={byDate:{}};}
+  let dpWake='07:00';try{const dp=JSON.parse(localStorage.getItem('daily-tracker-dayplan'));if(dp?.wakeTime)dpWake=dp.wakeTime;}catch{}
+  const inp=(scoreData.byDate&&scoreData.byDate[ds])||{};
+  const he=(hd.entries||[]).filter(e=>e.date===ds).slice(-1)[0]||{};
+  const acts=(d.activities||[]).filter(a=>a.date===ds);
+  const prof=hd.profile||{};
+  // 1. Todos (25)
+  const active=(d.todos||[]).filter(x=>x.active);
+  const comps=d.completions?.[ds]||{};
+  let todoSum=0;
+  if(active.length){todoSum=active.reduce((s,x)=>{const v=Array.isArray(comps)?(comps.includes(x.id)?1:0):(comps[x.id]||0);return s+(x.type==='count'?Math.min(v/(x.target||1),1):(v?1:0));},0);}
+  const todoPts=active.length?Math.round(todoSum/active.length*25):0;
+  // 2. Wake time (15)
+  const actualWake=inp.actualWakeTime||null;
+  let wakePts=0;
+  if(actualWake){const diff=timeToMin(actualWake)-timeToMin(dpWake);if(diff<=10)wakePts=15;else if(diff<=20)wakePts=12;else if(diff<=30)wakePts=8;else if(diff<=60)wakePts=4;}
+  // 3. Sleep duration (15)
+  const sleepH=inp.sleepH!=null?parseFloat(inp.sleepH):(he.sleepH!=null?he.sleepH:null);
+  let sleepPts=0;
+  if(sleepH!=null){if(sleepH>=7.5&&sleepH<=9)sleepPts=15;else if(sleepH>=7||sleepH<=9.5)sleepPts=11;else if(sleepH>=6)sleepPts=6;}
+  // 4. Sport (15)
+  let sportPts=0;
+  if(acts.length){sportPts=acts.reduce((m,a)=>{const p={low:8,medium:12,high:15}[a.intensity]||8;return p>m?p:m;},0);}
+  // 5. Nutrition (15)
+  let foodPts=0;
+  if(he.kcal!=null){foodPts=3;if(he.protein!=null&&he.carbs!=null&&he.fat!=null){foodPts=7;if(prof.protein&&prof.carbs&&prof.fat){const ok15=(v,tg)=>Math.abs(v-tg)/tg<=0.15;const ok10=(v,tg)=>Math.abs(v-tg)/tg<=0.10;if(ok15(he.protein,prof.protein)&&ok15(he.carbs,prof.carbs)&&ok15(he.fat,prof.fat)){foodPts=11;if(prof.target&&ok10(he.kcal,prof.target)&&ok10(he.protein,prof.protein)&&ok10(he.carbs,prof.carbs)&&ok10(he.fat,prof.fat))foodPts=15;}}}}
+  // 6. Sleep quality (10)
+  const sq=inp.sleepScore!=null?parseFloat(inp.sleepScore):(he.sleepScore!=null?he.sleepScore:null);
+  const sqPts=sq!=null?Math.round(sq/10*10):0;
+  // 7. Recovery (5)
+  const rec=inp.recovery!=null?parseFloat(inp.recovery):(he.recovery!=null?he.recovery:null);
+  const recPts=rec!=null?Math.round(rec/10*5):0;
+  const cats=[
+    {key:'todos',points:todoPts,max:25,available:true},
+    {key:'wake',points:wakePts,max:15,available:!!actualWake},
+    {key:'sleep',points:sleepPts,max:15,available:sleepH!=null},
+    {key:'sport',points:sportPts,max:15,available:true},
+    {key:'food',points:foodPts,max:15,available:true},
+    {key:'sleepq',points:sqPts,max:10,available:sq!=null},
+    {key:'recov',points:recPts,max:5,available:rec!=null}
+  ];
+  const total=cats.reduce((s,c)=>s+c.points,0);
+  return{total,cats};
+}
 
 function miniBar(vals,color,h=36){
   const w=200,n=vals.length,bw=(w-(n-1)*3)/n,mx=Math.max(...vals,1);
@@ -290,7 +429,32 @@ function getStats(){
   const curW=we.length?we[we.length-1].weight:null;
   const avgSl7=(()=>{const sl=he.filter(e=>e.sleepH!=null&&wds.includes(e.date));return sl.length?(sl.reduce((s,e)=>s+e.sleepH,0)/sl.length).toFixed(1):null;})();
   const target=hd.profile?.target??null;
-  return{p,wm,acts:(d.activities||[]).length,td7,sd7,weightPts:we,curW,avgSl7,target};
+  // Plan data
+  let activePlan=null;
+  try{
+    const pd=JSON.parse(localStorage.getItem('daily-tracker-plan'))||{plans:[],activePlanId:null};
+    const ap=pd.plans.find(p=>p.id===pd.activePlanId)||null;
+    if(ap){
+      const start=new Date(ap.startDate+'T00:00:00');
+      const diffDays=Math.floor((new Date()-start)/86400000);
+      const weekIdx=Math.max(0,Math.min(Math.floor(diffDays/7),ap.weeks.length-1));
+      activePlan={name:ap.name,emoji:ap.emoji,currentWeek:weekIdx+1,totalWeeks:ap.durationWeeks,sport:ap.sport};
+    }
+  }catch(e){}
+  // Daily/weekly todos
+  let dtodos=[];
+  try{
+    const today=todayStr();
+    const now=new Date();const dow=(now.getDay()+6)%7;
+    const mon=new Date(now);mon.setDate(now.getDate()-dow);
+    const mondayStr=mon.toISOString().split('T')[0];
+    dtodos=(d.todos||[]).filter(td=>td.active&&(td.frequency==='daily'||td.frequency==='weekly')).filter(td=>{
+      if(td.frequency==='daily')return!td.createdDate||td.createdDate>=today;
+      if(td.frequency==='weekly')return!td.createdDate||td.createdDate>=mondayStr;
+      return false;
+    });
+  }catch(e){}
+  return{p,wm,acts:(d.activities||[]).length,td7,sd7,weightPts:we,curW,avgSl7,target,activePlan,dtodos};
 }
 
 function render(){
@@ -317,7 +481,7 @@ function render(){
   document.getElementById('chart-todos').innerHTML=miniBar(s.td7,pc,38);
 
   // Sport card
-  set('cs2',`${s.wm} ${tl.s2}`);
+  set('cs2',`${(s.wm/60).toFixed(1)} ${tl.s2}`);
   document.getElementById('chart-sport').innerHTML=miniBar(s.sd7,ac,34);
 
   // Health card
@@ -333,8 +497,63 @@ function render(){
   }
 
   // Apple stat bar
-  set('st1',s.p+'%');set('st2',s.wm+' min');set('st3',s.curW?s.curW+' kg':s.avgSl7?s.avgSl7+'h':'—');
+  set('st1',s.p+'%');set('st2',(s.wm/60).toFixed(1)+'h');set('st3',s.curW?s.curW+' kg':s.avgSl7?s.avgSl7+'h':'—');
   set('stl1',tl.stl1);set('stl2',tl.stl2);set('stl3',tl.stl3);
+
+  // Training Plan card
+  set('ct4',tl.ct4);set('cd4',tl.cd4);
+  if(s.activePlan){
+    const ap=s.activePlan;
+    document.getElementById('plan-card-icon').textContent=ap.emoji||'📋';
+    set('cs4',`${tl.planWeekOf} ${ap.currentWeek}/${ap.totalWeeks}`);
+    const det=document.getElementById('plan-card-detail');
+    if(det)det.textContent=ap.name;
+  }else{
+    set('cs4','—');
+    const det=document.getElementById('plan-card-detail');
+    if(det)det.textContent=tl.planNoActive;
+  }
+
+  // Score card
+  const {total,cats}=calcLandingScore();
+  const scoreEl=document.getElementById('score-val');
+  const scoreColor=total>=80?'#4ade80':total>=60?'#f59e0b':total>=40?'#fb923c':'#f87171';
+  if(scoreEl){scoreEl.textContent=total;scoreEl.style.color=scoreColor;}
+  const tierLabels=lang==='de'?['Schwach','Mangelhaft','OK','Gut','Sehr gut','Ausgezeichnet']:['Weak','Poor','OK','Good','Very good','Excellent'];
+  const tierIdx=total>=90?5:total>=75?4:total>=60?3:total>=45?2:total>=30?1:0;
+  set('score-tier-lbl',tierLabels[tierIdx]);
+  set('ct7',lang==='de'?'Daily Score':'Daily Score');
+  set('cs7',`${total}/100`);
+  const catNamesDE={todos:'Todos',wake:'Aufwachen',sleep:'Schlafdauer',sport:'Sport',food:'Ernährung',sleepq:'Schlafquali.',recov:'Recovery'};
+  const catNamesEN={todos:'Todos',wake:'Wake time',sleep:'Sleep dur.',sport:'Sport',food:'Nutrition',sleepq:'Sleep qual.',recov:'Recovery'};
+  const catNames=lang==='de'?catNamesDE:catNamesEN;
+  const mini=document.getElementById('score-cats-mini');
+  if(mini){
+    mini.innerHTML=cats.map(c=>{
+      const barW=c.available?Math.round(c.points/c.max*100):0;
+      const barColor=c.points/c.max>=0.8?'#4ade80':c.points/c.max>=0.5?'#f59e0b':'#f87171';
+      return`<div class="score-cat-row"><span class="score-cat-lbl">${catNames[c.key]||c.key}</span><div class="score-bar-bg"><div class="score-bar-fill" style="width:${barW}%;background:${barColor}"></div></div><span class="score-pts">${c.available?c.points+'/'+c.max:'—'}</span></div>`;
+    }).join('');
+  }
+
+  // Daily Todos card
+  set('ct6',tl.ct6);
+  const dtList=document.getElementById('dtodo-mini-list');
+  if(dtList){
+    if(!s.dtodos.length){
+      dtList.innerHTML=`<div style="font-size:.72rem;color:var(--muted);opacity:.7">${tl.dtodoNone} →</div>`;
+      set('cs6','—');
+    }else{
+      const today2=todayStr();
+      const completions=(()=>{try{const dd=JSON.parse(localStorage.getItem('daily-tracker-v2')||'{}');return dd.completions?.[today2]||{};}catch{return{};}})();
+      dtList.innerHTML=s.dtodos.slice(0,5).map(td=>{
+        const done=td.type==='count'?(completions[td.id]||0)>=td.target:(completions[td.id]?1:0);
+        return`<div class="dtodo-mini"><span class="dtodo-dot" style="background:${td.color};opacity:${done?.4:1}"></span><span style="${done?'text-decoration:line-through;opacity:.4':''}">${td.name}</span><span style="margin-left:auto;font-size:.65rem">${td.frequency==='weekly'?'📆':'⚡'}</span></div>`;
+      }).join('');
+      const doneCount=s.dtodos.filter(td=>{const v=completions[td.id]||0;return td.type==='count'?v>=td.target:v===1;}).length;
+      set('cs6',`${doneCount}/${s.dtodos.length}`);
+    }
+  }
 }
 
 function pickBg(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{localStorage.setItem(BG_KEY,e.target.result);applyBg(e.target.result);};r.readAsDataURL(f);}
@@ -343,6 +562,17 @@ function applyBg(url){document.getElementById('body').style.backgroundImage=`url
 const savedBg=localStorage.getItem(BG_KEY);if(savedBg)applyBg(savedBg);
 document.documentElement.setAttribute('data-theme',theme);
 render();
+</script>
+<button id="ovs-fab-btn"></button>
+<script src="overseer.js"></script>
+<script>
+Overseer.init({page:'landing', mount:document.getElementById('ovs-fab-btn')});
+Overseer.registerActions({
+  answer_only(){},
+  _fallback(p){
+    // Data-writing actions not available on landing page
+  }
+});
 </script>
 </body>
 </html>

@@ -322,10 +322,17 @@ input[type=range]{width:100%;accent-color:var(--primary);cursor:pointer;}
 .plan-todo-desc{font-size:.75rem;color:var(--muted);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .plan-todo-meta{font-size:.72rem;color:var(--muted)}
 /* ── Tagesplan ───────────────────────────────────────── */
-.timeline-wrap{position:relative;background:var(--surface);border-radius:var(--radius);overflow:hidden;height:56px;margin:14px 0;}
-.timeline-block{position:absolute;top:6px;bottom:6px;border-radius:6px;display:flex;align-items:center;padding:0 7px;font-size:.62rem;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:default;}
-.timeline-now{position:absolute;top:0;bottom:0;width:2px;background:var(--danger);opacity:.9;}
+.timeline-wrap{position:relative;background:rgba(255,255,255,.04);border-radius:var(--radius);overflow:hidden;height:80px;margin:14px 0;}
+.timeline-block{position:absolute;top:6px;bottom:24px;border-radius:6px;display:flex;align-items:center;padding:0 7px;font-size:.62rem;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:pointer;transition:filter .15s;}
+.timeline-block:hover{filter:brightness(1.4);}
+.timeline-tick{position:absolute;bottom:4px;font-size:.56rem;color:var(--muted);transform:translateX(-50%);white-space:nowrap;pointer-events:none;line-height:1;}
+.timeline-tick-line{position:absolute;bottom:18px;width:1px;background:rgba(255,255,255,.1);pointer-events:none;}
+.timeline-now{position:absolute;top:0;bottom:0;width:2px;background:var(--danger);opacity:.95;z-index:2;}
 .timeline-now::after{content:'';position:absolute;top:-4px;left:50%;transform:translateX(-50%);width:8px;height:8px;background:var(--danger);border-radius:50%;}
+.timeline-now-lbl{position:absolute;bottom:5px;left:50%;transform:translateX(-50%);font-size:.6rem;font-weight:700;color:var(--danger);white-space:nowrap;letter-spacing:.02em;}
+.tl-tip{display:none;position:fixed;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px;pointer-events:none;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,.5);}
+.tl-tip-name{font-size:.82rem;font-weight:700;margin-bottom:3px;}
+.tl-tip-time{font-size:.72rem;color:var(--muted);}
 .tday-stat{text-align:center;padding:14px 8px;}
 .tday-num{font-size:1.9rem;font-weight:800;color:var(--primary);line-height:1;}
 .tday-lbl{font-size:.68rem;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.05em;}
@@ -337,7 +344,7 @@ input[type=range]{width:100%;accent-color:var(--primary);cursor:pointer;}
 .dp-todo-badge{font-size:.65rem;background:color-mix(in srgb,var(--primary) 15%,transparent);color:var(--primary);padding:2px 7px;border-radius:4px;white-space:nowrap;}
 .todo-time-badge{font-size:.68rem;color:var(--primary);margin-left:6px;white-space:nowrap;opacity:.85;}
 .tday-block-time{font-size:.74rem;color:var(--muted);}
-.score-ring-wrap{display:flex;flex-direction:column;align-items:center;padding:16px 0 0;}
+.score-ring-wrap{display:inline-block;position:relative;}
 .score-cat-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
 .score-cat-row:last-child{border-bottom:none;}
 .score-cat-label{font-size:.82rem;flex:1;}
@@ -403,6 +410,7 @@ p.collapsible-hdr{margin-bottom:10px;}
   <button class="tab-btn" id="tbtn-day" onclick="switchTab('day',this)"></button>
 </div>
 <div class="content">
+<div id="ovs-card-mount" class="card mb"></div>
 
 <!-- TODOS TAB -->
 <div id="tab-todos" class="tab-content active">
@@ -426,9 +434,9 @@ p.collapsible-hdr{margin-bottom:10px;}
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
           <h2 id="h-today" style="margin-bottom:0"></h2>
           <div style="display:flex;align-items:center;gap:4px">
-            <button class="btn-icon" onclick="navDay(-1)" style="font-size:1.1rem;padding:4px 8px">‹</button>
+            <button class="btn-icon" onclick="navDay(-1)" style="font-size:1.4rem;padding:4px 10px;color:var(--text)">‹</button>
             <span id="view-date-lbl" style="font-size:.75rem;color:var(--muted);min-width:72px;text-align:center"></span>
-            <button class="btn-icon" id="nav-next-btn" onclick="navDay(1)" style="font-size:1.1rem;padding:4px 8px">›</button>
+            <button class="btn-icon" id="nav-next-btn" onclick="navDay(1)" style="font-size:1.4rem;padding:4px 10px;color:var(--text)">›</button>
             <button class="btn" id="today-jump-btn" onclick="jumpToday()" style="display:none;font-size:.72rem;padding:3px 9px;border:1.5px solid var(--primary);color:var(--primary);background:none;border-radius:6px;font-family:inherit"></button>
           </div>
         </div>
@@ -485,9 +493,9 @@ p.collapsible-hdr{margin-bottom:10px;}
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <h2 id="h-sport-cal" style="margin-bottom:0"></h2>
       <div style="display:flex;gap:5px;align-items:center">
-        <button class="btn-icon" onclick="sportCalNav(-1)">‹</button>
+        <button class="btn-icon" onclick="sportCalNav(-1)" style="font-size:1.2rem;color:var(--text)">‹</button>
         <span id="sport-cal-title" style="font-size:.82rem;font-weight:600;min-width:90px;text-align:center"></span>
-        <button class="btn-icon" onclick="sportCalNav(1)">›</button>
+        <button class="btn-icon" onclick="sportCalNav(1)" style="font-size:1.2rem;color:var(--text)">›</button>
       </div>
     </div>
     <div class="cal-headers" id="sport-cal-hdr"></div>
@@ -611,10 +619,6 @@ p.collapsible-hdr{margin-bottom:10px;}
     </div>
   </div>
   <div class="grid-4 mb" id="health-stats"></div>
-  <div id="kcal-migrate-banner" style="display:none;background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.35);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-    <div style="font-size:.82rem;color:#fb923c;flex:1;min-width:200px" id="migrate-txt"></div>
-    <button class="btn" onclick="migrateKcalData()" id="migrate-btn" style="border:1.5px solid #fb923c;color:#fb923c;background:transparent;font-family:inherit;white-space:nowrap"></button>
-  </div>
   <div class="card mb" id="kcal-balance-card">
     <h2 class="collapsible-hdr" onclick="toggleCollapse('health-kcbal',true)" style="margin-bottom:0"><span id="h-kcbal-title"></span><span class="collapse-icon" id="ci-health-kcbal">▾</span></h2>
     <div id="cb-health-kcbal" style="margin-top:14px">
@@ -642,9 +646,9 @@ p.collapsible-hdr{margin-bottom:10px;}
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <span></span>
       <div style="display:flex;gap:5px;align-items:center">
-        <button class="btn-icon" onclick="healthCalNav(-1)">‹</button>
+        <button class="btn-icon" onclick="healthCalNav(-1)" style="font-size:1.2rem;color:var(--text)">‹</button>
         <span id="health-cal-title" style="font-size:.82rem;font-weight:600;min-width:90px;text-align:center"></span>
-        <button class="btn-icon" onclick="healthCalNav(1)">›</button>
+        <button class="btn-icon" onclick="healthCalNav(1)" style="font-size:1.2rem;color:var(--text)">›</button>
       </div>
     </div>
     <div class="cal-headers" id="health-cal-hdr"></div>
@@ -683,24 +687,26 @@ p.collapsible-hdr{margin-bottom:10px;}
   <div id="plan-week-grid" class="week-plan-grid"></div>
 </div>
 
-<!-- CALENDAR TAB -->
+<!-- SCORE TAB -->
 <div id="tab-score" class="tab-content">
   <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px">
-    <button class="btn-icon" onclick="navScore(-1)" style="font-size:1.1rem;padding:4px 10px">‹</button>
+    <button class="btn-icon" onclick="navScore(-1)" style="font-size:1.4rem;padding:4px 12px;color:var(--text)">‹</button>
     <span id="score-date-label" style="font-size:.9rem;font-weight:700;min-width:150px;text-align:center"></span>
-    <button class="btn-icon" onclick="navScore(1)" style="font-size:1.1rem;padding:4px 10px">›</button>
+    <button class="btn-icon" onclick="navScore(1)" style="font-size:1.4rem;padding:4px 12px;color:var(--text)">›</button>
     <button class="lang-btn" id="score-today-btn" onclick="navScore(0)" style="font-size:.72rem;padding:3px 12px;display:none"></button>
   </div>
   <div class="card mb" style="text-align:center;padding-bottom:20px">
-    <div class="score-ring-wrap">
-      <svg width="150" height="150" viewBox="0 0 150 150">
+    <div class="score-ring-wrap" style="position:relative;display:inline-block;width:150px;height:150px;">
+      <svg width="150" height="150" viewBox="0 0 150 150" style="display:block;">
         <circle cx="75" cy="75" r="58" fill="none" stroke="var(--border)" stroke-width="11"/>
         <circle id="score-arc" cx="75" cy="75" r="58" fill="none" stroke="#4ade80" stroke-width="11"
           stroke-dasharray="0 364.4" stroke-linecap="round"
           transform="rotate(-90 75 75)" style="transition:stroke-dasharray .7s,stroke .7s"/>
       </svg>
-      <div id="score-value" style="font-size:2.8rem;font-weight:900;line-height:1;margin-top:-86px;position:relative;z-index:1">—</div>
-      <div style="font-size:.72rem;color:var(--muted);margin-top:2px;position:relative;z-index:1">/ 100</div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;">
+        <div id="score-value" style="font-size:2.8rem;font-weight:900;line-height:1;color:var(--text);">—</div>
+        <div style="font-size:.72rem;color:var(--muted);">/ 100</div>
+      </div>
     </div>
     <div id="score-label" style="font-size:.9rem;font-weight:600;margin-top:12px;color:var(--primary)"></div>
   </div>
@@ -731,9 +737,9 @@ p.collapsible-hdr{margin-bottom:10px;}
 <!-- ══ TAGESPLAN + FOKUS TAB ══════════════════════════════════ -->
 <div id="tab-day" class="tab-content">
   <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px">
-    <button class="btn-icon" onclick="navDayPlan(-1)" style="font-size:1.1rem;padding:4px 10px">‹</button>
+    <button class="btn-icon" onclick="navDayPlan(-1)" style="font-size:1.4rem;padding:4px 12px;color:var(--text)">‹</button>
     <span id="dp-date-label" style="font-size:.9rem;font-weight:700;min-width:150px;text-align:center"></span>
-    <button class="btn-icon" onclick="navDayPlan(1)" style="font-size:1.1rem;padding:4px 10px">›</button>
+    <button class="btn-icon" onclick="navDayPlan(1)" style="font-size:1.4rem;padding:4px 12px;color:var(--text)">›</button>
     <button class="lang-btn" id="dp-today-btn" onclick="navDayPlan(0)" style="font-size:.72rem;padding:3px 12px;display:none"></button>
   </div>
   <p class="section-title" id="h-dayplan"></p>
@@ -2959,35 +2965,11 @@ function renderHealthLog(){
   }).join('');
 }
 function renderHealth(){
-  renderHealthStats();checkKcalMigration();renderKcalBalance();renderWeightChart();renderKcalHealthChart();renderSleepChart();renderHRChart();renderHealthLog();renderHealthCal();
+  renderHealthStats();renderKcalBalance();renderWeightChart();renderKcalHealthChart();renderSleepChart();renderHRChart();renderHealthLog();renderHealthCal();
   if(healthData.profile?.target){const r=document.getElementById('calc-res');if(r&&r.style.display==='none'){const p=healthData.profile;setCalcGender(p.gender||'male');setCalcGoalType(p.goalType||'maintain');['calc-age','calc-height','calc-cw'].forEach((id,i)=>{const v=[p.age,p.height,p.weight][i];const el=document.getElementById(id);if(el&&v)el.value=v;});const ca=document.getElementById('calc-act');if(ca&&p.actMult)ca.value=p.actMult;const cg=document.getElementById('calc-goal');if(cg&&p.goalDelta!=null)cg.value=p.goalDelta;calculateTDEE();}}
   applyAllCollapses();
 }
 
-// ── Calorie migration ────────────────────────────────────
-function checkKcalMigration(){
-  const banner=document.getElementById('kcal-migrate-banner');
-  if(!banner)return;
-  const wrong=healthData.entries.filter(e=>e.kcal!=null&&e.kcalBurned==null);
-  if(!wrong.length){banner.style.display='none';return;}
-  banner.style.display='flex';
-  const txt=document.getElementById('migrate-txt');
-  const btn=document.getElementById('migrate-btn');
-  if(txt)txt.textContent=lang==='de'
-    ?`⚠️ ${wrong.length} Einträge haben Kalorien im falschen Feld (verbrannt statt gegessen). Einmalig korrigieren?`
-    :`⚠️ ${wrong.length} entries have calories in the wrong field (burned stored as eaten). Fix once?`;
-  if(btn)btn.textContent=lang==='de'?'Jetzt korrigieren':'Fix now';
-}
-function migrateKcalData(){
-  let n=0;
-  healthData.entries.forEach(e=>{
-    if(e.kcal!=null&&e.kcalBurned==null){e.kcalBurned=e.kcal;e.kcal=null;n++;}
-  });
-  saveHealth();
-  document.getElementById('kcal-migrate-banner').style.display='none';
-  renderHealth();
-  toast(lang==='de'?`${n} Einträge korrigiert ✓`:`${n} entries fixed ✓`);
-}
 
 // ── Calorie balance ───────────────────────────────────────
 function calcSportKcal(date){
@@ -3280,7 +3262,7 @@ function _activateTab(name){document.getElementById('tab-todos').classList.remov
 if(urlTab==='sport'){_activateTab('sport');renderSport();}
 else if(urlTab==='health'){_activateTab('health');renderHealth();}
 else if(urlTab==='plan'){_activateTab('plan');renderPlan();}
-else if(urlTab==='cal'){_activateTab('cal');renderCal();}
+else if(urlTab==='score'){_activateTab('score');renderScore();}
 else renderTodos();
 document.getElementById('sport-date').value=todayStr();
 document.getElementById('h-date').value=todayStr();
@@ -3379,15 +3361,44 @@ function renderDayPlan(){
   const tl=document.getElementById('dp-timeline');
   if(tl){
     const span=available||1;let html='';
+    // Edge markers: always show wake (left) and sleep (right)
+    const wakeLabel=dayPlan.wakeTime||'07:00';
+    const sleepLabel=dayPlan.sleepTime||'22:30';
+    html+=`<div class="timeline-tick-line" style="left:0%;top:6px"></div>`;
+    html+=`<div class="timeline-tick" style="left:0%;transform:none">${wakeLabel}</div>`;
+    html+=`<div class="timeline-tick-line" style="left:100%;top:6px"></div>`;
+    html+=`<div class="timeline-tick" style="left:100%;transform:translateX(-100%)">${sleepLabel}</div>`;
+    // Intermediate hour ticks (skip if too close to edges)
+    const tickStep=span<=180?30:span<=360?60:120;
+    const minDist=span*0.08;
+    for(let off=tickStep;off<span;off+=tickStep){
+      if(off<minDist||off>span-minDist)continue;
+      const pct=(off/span*100).toFixed(1);
+      const absMin=(wake+off)%1440;
+      const lbl=`${String(Math.floor(absMin/60)).padStart(2,'0')}:${String(absMin%60).padStart(2,'0')}`;
+      html+=`<div class="timeline-tick-line" style="left:${pct}%;top:6px"></div>`;
+      html+=`<div class="timeline-tick" style="left:${pct}%">${lbl}</div>`;
+    }
+    // Blocks
     allBlocks.forEach(b=>{
       let bMin=timeToMin(b.start)-wake;if(bMin<0)bMin+=1440;
       const left=Math.max(0,Math.min(bMin/span*100,100));
       const width=Math.min(b.duration/span*100,100-left);
       if(width<0.2)return;
       const col=b.fromTodo?(b.color||'#94a3b8'):(catColors[b.category]||'#94a3b8');
-      html+=`<div class="timeline-block" style="left:${left.toFixed(1)}%;width:${width.toFixed(1)}%;background:${col}22;border:1px solid ${col};color:${col}">${b.name}</div>`;
+      const endRawMin=timeToMin(b.start)+b.duration;
+      const endHStr=`${String(Math.floor(endRawMin/60)%24).padStart(2,'0')}:${String(endRawMin%60).padStart(2,'0')}`;
+      const safeName=b.name.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+      html+=`<div class="timeline-block" style="left:${left.toFixed(1)}%;width:${width.toFixed(1)}%;background:${col}22;border:1px solid ${col};color:${col}" data-name="${safeName}" data-color="${col}" data-tr="${b.start}–${endHStr}" data-dur="${minToHM(b.duration)}" onmouseenter="showTlTip(event,this)" onmousemove="moveTlTip(event)" onmouseleave="hideTlTip()">${b.name}</div>`;
     });
-    if(dpDate===todayStr()){const now=new Date(),nowMin=now.getHours()*60+now.getMinutes();let nowOff=nowMin-wake;if(nowOff<0)nowOff+=1440;if(nowOff>=0&&nowOff<=span)html+=`<div class="timeline-now" style="left:${(nowOff/span*100).toFixed(1)}%"></div>`;}
+    // Current time needle
+    const now=new Date(),nowMin=now.getHours()*60+now.getMinutes();
+    let nowOff=nowMin-wake;if(nowOff<0)nowOff+=1440;
+    if(nowOff>=0&&nowOff<=span){
+      const pct=(nowOff/span*100).toFixed(1);
+      const nowLbl=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+      html+=`<div class="timeline-now" style="left:${pct}%"><span class="timeline-now-lbl">${nowLbl}</span></div>`;
+    }
     tl.innerHTML=html;
   }
   // Block list
@@ -3500,7 +3511,7 @@ function calcScore(ds){
   // 3. Sleep duration (15) — score input takes priority over health entry
   const sleepH=inp.sleepH!=null?parseFloat(inp.sleepH):(he.sleepH!=null?he.sleepH:null);
   let sleepPts=0,sleepAvail=sleepH!=null;
-  if(sleepAvail){if(sleepH>=7.5&&sleepH<=9)sleepPts=15;else if(sleepH>=7||sleepH<=9.5)sleepPts=11;else if(sleepH>=6)sleepPts=6;else sleepPts=0;}
+  if(sleepAvail){if(sleepH>=7.5&&sleepH<=9)sleepPts=15;else if((sleepH>=7&&sleepH<7.5)||(sleepH>9&&sleepH<=9.5))sleepPts=11;else if(sleepH>=6)sleepPts=6;else sleepPts=0;}
   cats.push({key:'sleep',label:t('scoreSleep'),points:sleepPts,max:15,available:sleepAvail});
   // 4. Sport (15)
   let sportPts=0;
@@ -3702,6 +3713,140 @@ function stopFocus(){
   stopFocusAudio();
   document.getElementById('focus-overlay').classList.remove('open');
 }
+function showTlTip(e,el){
+  const tip=document.getElementById('dp-tl-tip');if(!tip)return;
+  document.getElementById('dp-tl-tip-name').textContent=el.dataset.name;
+  document.getElementById('dp-tl-tip-name').style.color=el.dataset.color||'var(--text)';
+  document.getElementById('dp-tl-tip-time').textContent=el.dataset.tr+' · '+el.dataset.dur;
+  tip.style.display='block';
+  tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY-58)+'px';
+}
+function moveTlTip(e){const tip=document.getElementById('dp-tl-tip');if(tip&&tip.style.display!=='none'){tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY-58)+'px';}}
+function hideTlTip(){const tip=document.getElementById('dp-tl-tip');if(tip)tip.style.display='none';}
+</script>
+<div id="dp-tl-tip" class="tl-tip">
+  <div id="dp-tl-tip-name" class="tl-tip-name"></div>
+  <div id="dp-tl-tip-time" class="tl-tip-time"></div>
+</div>
+<script src="overseer.js"></script>
+<script>
+Overseer.init({page:'tracker', mount:document.getElementById('ovs-card-mount')});
+Overseer.registerActions({
+  // Aktivität loggen — direktes push (kein einfaches Formular-Submit verfügbar)
+  log_activity(p){
+    const sport=p.sport||'Training';
+    data.activities.push({
+      id:uid(),
+      type:sport,
+      emoji:_ovsEmoji(sport),
+      date:p.date||todayStr(),
+      duration:p.duration_min||30,
+      intensity:p.intensity||'medium',
+      notes:p.notes||'',
+      exercises:p.exercises||[],
+      calories:calcActivityKcal(p.intensity||'medium',p.duration_min||30)
+    });
+    save();
+    renderSport();
+    toast(sport+(lang==='de'?' gespeichert ✓':' saved ✓'));
+  },
+  // Todo erstellen — Formular befüllen + echte addTodo() aufrufen
+  add_todo(p){
+    document.getElementById('new-todo-name').value=p.name||'';
+    document.getElementById('new-todo-color').value=p.color||'#818cf8';
+    setTodoType(p.type||'boolean');
+    if((p.type||'boolean')==='count')
+      document.getElementById('new-todo-target').value=p.target||10;
+    setTodoFreq(p.frequency||'regular');
+    const timeEl=document.getElementById('new-todo-time');
+    const durEl=document.getElementById('new-todo-dur');
+    if(p.start_time&&timeEl)timeEl.value=p.start_time;
+    if(p.duration_min&&durEl)durEl.value=p.duration_min;
+    const prevView=viewDate;
+    if(!p.date)viewDate=todayStr();
+    addTodo();
+    viewDate=prevView;
+  },
+  // Todo als erledigt markieren — echte toggleBool() aufrufen
+  complete_todo(p){
+    const q=(p.name_contains||'').toLowerCase();
+    const todo=data.todos.find(t=>t.active!==false&&t.name.toLowerCase().includes(q));
+    if(!todo)return;
+    const prevView=viewDate;
+    viewDate=p.date||todayStr();
+    if(todo.type==='boolean'){
+      if(!getVal(viewDate,todo.id))toggleBool(todo.id);
+    } else {
+      sliderChange(todo.id,p.amount??todo.target);
+      save();
+    }
+    viewDate=prevView;
+    renderTodayPanel();
+  },
+  // Health-Eintrag — bestehenden Eintrag mergen oder neu anlegen
+  log_health(p){
+    const date=p.date||todayStr();
+    // Wenn für dieses Datum schon ein Eintrag existiert, edit mode aktivieren (preserviert vorhandene Felder)
+    const existing=[...healthData.entries].filter(e=>e.date===date).sort((a,b)=>b.id.localeCompare(a.id))[0];
+    if(existing)editHealthEntry(existing.id);
+    // Jetzt neue Werte oben drauf schreiben
+    const set=(id,v)=>{if(v!=null)document.getElementById(id).value=v;};
+    document.getElementById('h-date').value=date;
+    set('h-weight',  p.weight_kg??p.weight);
+    set('h-hr',      p.hr);
+    set('h-sleeph',  p.sleep_h);
+    set('h-sleepq',  p.sleep_quality??p.sleep_score);
+    set('h-recov',   p.recovery);
+    set('h-kcal',    p.kcal);
+    set('h-kcalb',   p.kcal_burned);
+    set('h-steps',   p.steps);
+    set('h-protein', p.protein);
+    set('h-carbs',   p.carbs);
+    set('h-fat',     p.fat);
+    if(p.notes)document.getElementById('h-notes').value=p.notes;
+    addHealthEntry(); // ruft updateHealthEntry() auf wenn editHealthId gesetzt, sonst neuer Eintrag
+  },
+  // Score-Tab-Inputs — Formular befüllen + echte saveScoreInputs() aufrufen
+  log_score(p){
+    const set=(id,v)=>{if(v!=null)document.getElementById(id).value=v;};
+    set('score-input-wake',   p.wake_time??p.actualWakeTime);
+    set('score-input-sleep',  p.sleep_h);
+    set('score-input-sleepq', p.sleep_quality??p.sleep_score);
+    set('score-input-recov',  p.recovery);
+    saveScoreInputs();
+  },
+  // Tagesplan-Block — direktes push
+  add_day_block(p){
+    const date=p.date||todayStr();
+    if(!dayPlan.byDate)dayPlan.byDate={};
+    if(!dayPlan.byDate[date])dayPlan.byDate[date]=[];
+    dayPlan.byDate[date].push({
+      id:uid(),name:p.name||'Block',start:p.start||'09:00',
+      duration:p.duration_min||60,category:p.category||'routine',notes:p.notes||''
+    });
+    saveDayPlan();
+    if(document.getElementById('tab-day').classList.contains('active'))renderDayPlan();
+  },
+  // Plan-Session — direktes Schreiben
+  set_plan_session(p){
+    const plan=getActivePlan();if(!plan?.weeks)return;
+    const start=new Date(plan.startDate+'T00:00:00');
+    const monday=new Date(start);monday.setDate(start.getDate()-(start.getDay()+6)%7);
+    const d=new Date((p.date||todayStr())+'T00:00:00');
+    const diffDays=Math.floor((d-monday)/86400000);
+    if(diffDays<0)return;
+    const weekIdx=Math.floor(diffDays/7),dayIdx=diffDays%7;
+    if(weekIdx>=plan.weeks.length)return;
+    if(!plan.weeks[weekIdx].days)plan.weeks[weekIdx].days=Array(7).fill(null);
+    plan.weeks[weekIdx].days[dayIdx]={
+      title:p.title||'Training',description:p.description||'',
+      duration:p.duration_min||60,intensity:p.intensity||'medium',details:p.details||''
+    };
+    savePlan();
+    if(document.getElementById('tab-plan').classList.contains('active'))renderPlan();
+  },
+  answer_only(){}
+});
 </script>
 </body>
 </html>

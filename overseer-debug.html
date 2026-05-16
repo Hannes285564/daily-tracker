@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Overseer Debug</title>
+<style>
+  :root{--bg:#0a0a0a;--surface:#141414;--surface2:#1c1c1c;--border:rgba(255,255,255,.08);--primary:#5eead4;--text:#f5f5f5;--muted:#6b7280;--red:#f87171;--yellow:#fbbf24;--green:#4ade80;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Outfit',system-ui,sans-serif;font-size:14px;padding:24px;max-width:960px;margin:auto;}
+  h1{color:var(--primary);font-size:1.4rem;margin-bottom:4px;}
+  h2{font-size:.95rem;color:var(--primary);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+  .subtitle{color:var(--muted);font-size:.82rem;margin-bottom:24px;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px;}
+  .row{display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap;margin-bottom:10px;}
+  label{color:var(--muted);font-size:.8rem;display:flex;flex-direction:column;gap:4px;flex:1;min-width:160px;}
+  input,select,textarea{background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:.85rem;padding:7px 12px;outline:none;width:100%;}
+  input:focus,select:focus,textarea:focus{border-color:var(--primary);}
+  input[type=password]{letter-spacing:.1em;}
+  .btn{background:var(--primary);color:#0a0a0a;border:none;border-radius:8px;padding:9px 20px;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
+  .btn:disabled{opacity:.4;cursor:default;}
+  .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted);}
+  pre{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:.75rem;overflow-x:auto;white-space:pre-wrap;word-break:break-all;line-height:1.6;max-height:340px;overflow-y:auto;}
+  .status{padding:7px 12px;border-radius:8px;font-size:.8rem;font-weight:600;margin-bottom:10px;}
+  .status-ok{background:rgba(74,222,128,.12);color:var(--green);border:1px solid rgba(74,222,128,.25);}
+  .status-err{background:rgba(248,113,113,.12);color:var(--red);border:1px solid rgba(248,113,113,.25);}
+  .status-warn{background:rgba(251,191,36,.12);color:var(--yellow);border:1px solid rgba(251,191,36,.25);}
+  .status-info{background:rgba(94,234,212,.08);color:var(--primary);border:1px solid rgba(94,234,212,.2);}
+  .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:700;margin-left:6px;}
+  .badge-ok{background:rgba(74,222,128,.15);color:var(--green);}
+  .badge-err{background:rgba(248,113,113,.15);color:var(--red);}
+  .badge-warn{background:rgba(251,191,36,.15);color:var(--yellow);}
+  .step{border-left:3px solid var(--border);padding:4px 12px;margin:4px 0;font-size:.8rem;color:var(--muted);}
+  .step.ok{border-color:var(--green);color:var(--green);}
+  .step.err{border-color:var(--red);color:var(--red);}
+  .step.warn{border-color:var(--yellow);color:var(--yellow);}
+  .step.info{border-color:var(--primary);color:var(--primary);}
+  hr{border:none;border-top:1px solid var(--border);margin:14px 0;}
+  .kv{display:flex;gap:8px;font-size:.8rem;margin:3px 0;}
+  .kv .k{color:var(--muted);min-width:130px;flex-shrink:0;}
+  .kv .v{color:var(--text);word-break:break-all;}
+  .spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #log-area>div{padding:5px 0;border-bottom:1px solid var(--border);font-size:.8rem;}
+</style>
+</head>
+<body>
+
+<h1>◈ Overseer — Debug-Konsole</h1>
+<p class="subtitle">Zeigt exakt was die KI bekommt, was sie antwortet und was passiert wenn ein To-Do erstellt wird.</p>
+
+<!-- ── 1. Konfiguration ── -->
+<div class="card">
+  <h2>⚙️ Konfiguration</h2>
+  <div class="row">
+    <label>API-Key
+      <input id="cfg-key" type="password" placeholder="sk-ant-api03-…">
+    </label>
+    <label>Testnachricht
+      <input id="cfg-msg" value="Erstelle eine Morgenroutine als tägliches To-Do, 60 Minuten ab 08:30 Uhr">
+    </label>
+  </div>
+  <div class="row" style="gap:8px">
+    <button class="btn" onclick="runFullTest()">▶ Volltest starten</button>
+    <button class="btn btn-ghost" onclick="refreshSnapshot()">↺ Snapshot aktualisieren</button>
+    <button class="btn btn-ghost" onclick="clearLog()">✕ Log leeren</button>
+  </div>
+  <div id="run-status" style="margin-top:10px"></div>
+</div>
+
+<!-- ── 2. Snapshot ── -->
+<div class="card">
+  <h2>📦 Datensnapshot <span id="snap-badge"></span>
+    <span style="margin-left:auto;font-size:.75rem;color:var(--muted)" id="snap-size"></span>
+  </h2>
+  <p style="color:var(--muted);font-size:.8rem;margin-bottom:10px">Das bekommt die KI als Kontext über deine Daten.</p>
+  <pre id="snap-view">Wird geladen…</pre>
+</div>
+
+<!-- ── 3. System-Prompt ── -->
+<div class="card">
+  <h2>📋 System-Prompt <span style="font-size:.75rem;color:var(--muted)" id="prompt-tokens"></span></h2>
+  <p style="color:var(--muted);font-size:.8rem;margin-bottom:10px">Die vollständigen Anweisungen die die KI erhält (inkl. Snapshot).</p>
+  <pre id="prompt-view">Snapshot zuerst laden…</pre>
+</div>
+
+<!-- ── 4. API-Antwort ── -->
+<div class="card">
+  <h2>🤖 Rohe API-Antwort <span id="resp-badge"></span></h2>
+  <p style="color:var(--muted);font-size:.8rem;margin-bottom:10px">Exakt was Claude zurückschickt — vor jeder Verarbeitung.</p>
+  <pre id="resp-view">Noch kein Test durchgeführt.</pre>
+</div>
+
+<!-- ── 5. Geparste Aktionen ── -->
+<div class="card">
+  <h2>⚡ Geparste Aktionen <span id="actions-badge"></span></h2>
+  <p style="color:var(--muted);font-size:.8rem;margin-bottom:10px">Was die KI tun möchte und welche Parameter sie schickt.</p>
+  <pre id="actions-view">—</pre>
+</div>
+
+<!-- ── 6. Ausführungsprotokoll ── -->
+<div class="card">
+  <h2>🔍 Ausführungsprotokoll</h2>
+  <p style="color:var(--muted);font-size:.8rem;margin-bottom:10px">Schritt für Schritt was beim Todo-Erstellen passiert.</p>
+  <div id="log-area" style="min-height:40px"></div>
+</div>
+
+<!-- ── 7. Direktes Todo-Erstellen ── -->
+<div class="card">
+  <h2>🛠️ Direktes Todo-Erstellen (Bypass-Test)</h2>
+  <p style="color:var(--muted);font-size:.8rem;margin-bottom:12px">
+    Erstellt ein Todo direkt in localStorage — ohne KI. So testest du, ob das Schreiben selbst funktioniert,
+    unabhängig vom API-Flow.
+  </p>
+  <div class="row">
+    <label>Name
+      <input id="d-name" value="Morgenroutine">
+    </label>
+    <label>Frequenz
+      <select id="d-freq">
+        <option value="regular">regular — täglich wiederholen (Habit/Gewohnheit)</option>
+        <option value="daily">daily — nur heute (wird morgen gelöscht)</option>
+        <option value="weekly">weekly — nur diese Woche</option>
+      </select>
+    </label>
+    <label>Typ
+      <select id="d-type">
+        <option value="boolean">boolean (Ja/Nein)</option>
+        <option value="count">count (Zähler)</option>
+      </select>
+    </label>
+  </div>
+  <div class="row">
+    <label>Startzeit (optional)
+      <input id="d-time" value="08:30" placeholder="HH:MM">
+    </label>
+    <label>Dauer in Minuten (optional)
+      <input id="d-dur" value="60" type="number">
+    </label>
+    <label>Farbe
+      <input id="d-color" value="#818cf8" type="color">
+    </label>
+  </div>
+  <div class="row">
+    <button class="btn" onclick="createDirectTodo()">✓ Todo direkt erstellen</button>
+    <button class="btn btn-ghost" onclick="showCurrentTodos()">👁 Aktuelle Todos zeigen</button>
+  </div>
+  <div id="direct-result" style="margin-top:10px"></div>
+</div>
+
+<!-- ── 8. Aktuelle Todos in localStorage ── -->
+<div class="card">
+  <h2>📋 Aktuelle Todos in localStorage</h2>
+  <pre id="todos-view">Noch nicht geladen.</pre>
+</div>
+
+<script>
+// ── Hilfsfunktionen ────────────────────────────────────────────
+function todayStr(){
+  const d=new Date();
+  return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function uid(){return Math.random().toString(36).slice(2,11);}
+function setStatus(html,type='info'){
+  document.getElementById('run-status').innerHTML=`<div class="status status-${type}">${html}</div>`;
+}
+function log(msg,type='info'){
+  const d=document.createElement('div');
+  d.innerHTML=`<span class="step ${type}">${msg}</span>`;
+  document.getElementById('log-area').appendChild(d);
+}
+function clearLog(){document.getElementById('log-area').innerHTML='';}
+function setBadge(id,text,type){
+  const el=document.getElementById(id);
+  if(el)el.innerHTML=`<span class="badge badge-${type}">${text}</span>`;
+}
+
+// ── Snapshot ──────────────────────────────────────────────────
+function buildSnapshot(){
+  const today=todayStr();
+  const cutoff=new Date();cutoff.setDate(cutoff.getDate()-14);
+  const cutoffStr=cutoff.toISOString().split('T')[0];
+  const snap={today,lang:localStorage.getItem('dt-lang')||'de'};
+  try{
+    const d=JSON.parse(localStorage.getItem('daily-tracker-v2'))||{};
+    const comp=(d.completions||{})[today]||{};
+    snap.todos=(d.todos||[]).filter(t=>t.active!==false).map(t=>({
+      name:t.name,type:t.type,target:t.target,frequency:t.frequency||'regular',
+      done_today:t.type==='boolean'?!!comp[t.id]:(comp[t.id]||0)
+    }));
+    snap.activities_14d=(d.activities||[])
+      .filter(a=>a.date>=cutoffStr)
+      .sort((a,b)=>b.date.localeCompare(a.date))
+      .map(a=>({date:a.date,sport:a.type,duration_min:a.duration,intensity:a.intensity}));
+  }catch(e){snap._err_todos=e.message;}
+  try{
+    const h=JSON.parse(localStorage.getItem('daily-tracker-health'))||{};
+    snap.health_last5=(h.entries||[])
+      .sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5)
+      .map(e=>({date:e.date,weight:e.weight,sleep_h:e.sleepH,kcal:e.kcal}));
+    const p=h.profile||{};
+    if(p.targetWeight||p.height||p.kcalGoal)
+      snap.profile={targetWeight:p.targetWeight,height:p.height,kcalGoal:p.kcalGoal};
+  }catch(e){snap._err_health=e.message;}
+  try{
+    const pl=JSON.parse(localStorage.getItem('daily-tracker-plan'))||{};
+    const active=(pl.plans||[]).find(p=>p.id===pl.activePlanId);
+    if(active)snap.active_plan={name:active.name||active.sport,sport:active.sport,
+      fitness:active.fitness,totalWeeks:active.weeks?.length,startDate:active.startDate};
+  }catch(e){snap._err_plan=e.message;}
+  try{
+    const dp=JSON.parse(localStorage.getItem('daily-tracker-dayplan'))||{};
+    snap.wake=dp.wakeTime||'07:00';
+    snap.sleep_time=dp.sleepTime||'22:30';
+    snap.today_blocks=((dp.byDate||{})[today]||[])
+      .map(b=>({name:b.name,start:b.start,duration_min:b.duration,category:b.category}));
+  }catch(e){snap._err_dayplan=e.message;}
+  try{
+    const sc=JSON.parse(localStorage.getItem('daily-tracker-scores'))||{};
+    const sd=(sc.byDate||{})[today];
+    if(sd?.total!=null)snap.score_today=sd.total;
+  }catch(e){}
+  return snap;
+}
+
+function buildSystemPrompt(snap){
+  const lang=snap.lang||'de';
+  const today=snap.today;
+  return `Du bist der Overseer — persönlicher KI-Coach für die Daily-Tracker-App.
+NUTZERDATEN (Snapshot):
+${JSON.stringify(snap)}
+HEUTE: ${today} | SPRACHE: ${lang}
+
+Antworte NUR mit gültigem JSON ohne Markdown-Wrapper. Exaktes Format:
+{"reply":"...", "actions":[{"type":"<action-type>","params":{...}}, ...]}
+Beispiel für add_todo: {"type":"add_todo","params":{"name":"Morgenroutine","frequency":"regular","start_time":"08:30","duration_min":60}}
+Beispiel für log_activity: {"type":"log_activity","params":{"sport":"Laufen","duration_min":45,"intensity":"low"}}
+Wenn keine Aktion: {"reply":"...","actions":[]}
+
+Erlaubte action types und ihre params:
+add_todo: name, type (boolean|count), target, frequency, color, start_time (HH:MM), duration_min
+  frequency: "regular"=täglich wiederholen/Habit (STANDARD!), "daily"=nur heute, "weekly"=diese Woche
+  Für "tägliches To-Do"/"Habit"/"Gewohnheit" → IMMER frequency="regular"
+log_activity: sport, duration_min, intensity (low|medium|high), date, notes, exercises[]
+complete_todo: name_contains, date
+log_health: date, weight_kg, sleep_h, kcal, hr, sleep_quality, recovery, steps, protein, carbs, fat, kcal_burned, notes
+log_score: wake_time (HH:MM), sleep_h, sleep_quality (1-10), recovery (1-10)
+add_day_block: name, start (HH:MM), duration_min, category, date
+set_plan_session: date, title, description, duration_min, intensity, details
+Bei Fragen: actions=[]. Bei fehlenden Infos: kurze Rückfrage, actions=[].
+Erfinde keine Daten.`;
+}
+
+// ── Snapshot anzeigen ─────────────────────────────────────────
+function refreshSnapshot(){
+  const snap=buildSnapshot();
+  const json=JSON.stringify(snap,null,2);
+  document.getElementById('snap-view').textContent=json;
+  const chars=json.length;
+  const tokens=Math.round(chars/4);
+  document.getElementById('snap-size').textContent=`~${tokens} Tokens`;
+  setBadge('snap-badge',`${(snap.todos||[]).length} Todos`,'ok');
+
+  const prompt=buildSystemPrompt(snap);
+  document.getElementById('prompt-view').textContent=prompt;
+  document.getElementById('prompt-tokens').textContent=`~${Math.round(prompt.length/4)} Tokens`;
+}
+
+// ── Volltest ──────────────────────────────────────────────────
+async function runFullTest(){
+  clearLog();
+  const apiKey=document.getElementById('cfg-key').value.trim();
+  const msg=document.getElementById('cfg-msg').value.trim();
+
+  if(!apiKey){setStatus('❌ Kein API-Key eingegeben','err');return;}
+  if(!msg){setStatus('❌ Keine Testnachricht eingegeben','err');return;}
+
+  document.getElementById('resp-view').textContent='Warte auf Antwort…';
+  document.getElementById('actions-view').textContent='—';
+  setBadge('resp-badge','…','warn');
+  setBadge('actions-badge','…','warn');
+  setStatus('<span class="spinner"></span>API-Call läuft…','info');
+  document.querySelector('.btn[onclick="runFullTest()"]').disabled=true;
+
+  log(`Nachricht an KI: "${msg}"`, 'info');
+
+  try{
+    // 1. Snapshot
+    const snap=buildSnapshot();
+    log(`Snapshot gebaut: ${(snap.todos||[]).length} Todos, ${(snap.activities_14d||[]).length} Aktivitäten (14d)`, 'ok');
+    refreshSnapshot();
+
+    // 2. System Prompt
+    const systemPrompt=buildSystemPrompt(snap);
+    log(`System-Prompt: ${systemPrompt.length} Zeichen (~${Math.round(systemPrompt.length/4)} Tokens)`, 'ok');
+
+    // 3. API Call
+    log('Sende Request an api.anthropic.com…', 'info');
+    const t0=Date.now();
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-haiku-4-5-20251001',
+        max_tokens:1024,
+        system:systemPrompt,
+        messages:[{role:'user',content:msg}]
+      })
+    });
+    const ms=Date.now()-t0;
+    log(`Antwort erhalten: HTTP ${resp.status} in ${ms}ms`, resp.ok?'ok':'err');
+
+    if(resp.status===401){
+      setStatus('❌ Ungültiger API-Key (HTTP 401)','err');
+      setBadge('resp-badge','401 Fehler','err');
+      log('HTTP 401 — API-Key ungültig','err');
+      return;
+    }
+    if(!resp.ok){
+      const errText=await resp.text();
+      setStatus(`❌ API-Fehler HTTP ${resp.status}`,'err');
+      document.getElementById('resp-view').textContent=errText;
+      setBadge('resp-badge',`HTTP ${resp.status}`,'err');
+      log(`HTTP ${resp.status}: ${errText.slice(0,200)}`,'err');
+      return;
+    }
+
+    // 4. Parse API response
+    const apiData=await resp.json();
+    const rawText=(apiData.content?.[0]?.text||'').trim();
+    log(`Roher Text von Claude (${rawText.length} Zeichen):\n${rawText.slice(0,300)}${rawText.length>300?'…':''}`, 'info');
+    document.getElementById('resp-view').textContent=rawText;
+    setBadge('resp-badge','Empfangen','ok');
+
+    // 5. JSON extrahieren
+    const match=rawText.match(/\{[\s\S]*\}/);
+    if(!match){
+      log('❌ Kein JSON-Objekt in der Antwort gefunden!','err');
+      setStatus('❌ Claude hat kein valides JSON zurückgegeben','err');
+      setBadge('actions-badge','Kein JSON','err');
+      return;
+    }
+
+    let parsed;
+    try{
+      parsed=JSON.parse(match[0]);
+      log('✓ JSON erfolgreich geparst','ok');
+    }catch(e){
+      log(`❌ JSON-Parse-Fehler: ${e.message}`,'err');
+      log(`Rohes JSON: ${match[0].slice(0,300)}`,'warn');
+      setStatus('❌ JSON-Parse-Fehler','err');
+      return;
+    }
+
+    // 6. Reply & Actions zeigen
+    log(`KI-Antwort (reply): "${parsed.reply}"`, 'ok');
+    const actions=parsed.actions||[];
+    log(`Anzahl Aktionen: ${actions.length}`, actions.length>0?'ok':'warn');
+
+    document.getElementById('actions-view').textContent=JSON.stringify(actions,null,2);
+    setBadge('actions-badge',`${actions.length} Aktion${actions.length!==1?'en':''}`,actions.length>0?'ok':'warn');
+
+    if(actions.length===0){
+      log('⚠️ Keine Aktionen — KI hat nur geantwortet ohne etwas zu tun.','warn');
+      log('  Mögliche Ursache: KI braucht mehr Details oder Anweisung war unklar.','warn');
+      setStatus(`ℹ️ KI hat geantwortet, aber KEINE Aktion ausgeführt. Reply: "${parsed.reply}"`, 'warn');
+      return;
+    }
+
+    // 7. Aktionen simulieren
+    for(const action of actions){
+      if(action.type==='answer_only')continue;
+      log(`→ Aktion: ${action.type}`, 'info');
+
+      // Params ermitteln (tolerant gegenüber flat vs. params-Struktur)
+      const{type:_t,...flat}=action;
+      const p=(action.params&&typeof action.params==='object')?action.params:flat;
+      log(`  Params: ${JSON.stringify(p)}`, 'info');
+
+      if(action.type==='add_todo'){
+        log(`  name="${p.name||'(leer)'}", frequency="${p.frequency||'(nicht gesetzt)'}", start_time="${p.start_time||'(keine)'}", duration_min="${p.duration_min||'(keine)'}"`, 'info');
+        if(!p.name){
+          log('  ❌ PROBLEM: name ist leer! addTodo() würde abbrechen.','err');
+          continue;
+        }
+        // Direkt in localStorage schreiben (wie die echte Funktion)
+        const result=executeAddTodo(p);
+        if(result.ok){
+          log(`  ✓ Todo erstellt: ${JSON.stringify(result.todo)}`, 'ok');
+        }else{
+          log(`  ❌ Fehler: ${result.error}`, 'err');
+        }
+      }
+    }
+
+    setStatus('✓ Test abgeschlossen — siehe Log oben','ok');
+    showCurrentTodos();
+
+  }catch(err){
+    setStatus(`❌ Unerwarteter Fehler: ${err.message}`,'err');
+    log(`Exception: ${err.message}`,'err');
+    console.error(err);
+  }finally{
+    document.querySelector('.btn[onclick="runFullTest()"]').disabled=false;
+  }
+}
+
+// ── Todo direkt in localStorage schreiben ────────────────────
+function executeAddTodo(p){
+  try{
+    const today=todayStr();
+    const data=JSON.parse(localStorage.getItem('daily-tracker-v2'))||{todos:[],completions:{},activities:[]};
+    const todo={
+      id:uid(),
+      name:p.name||'Unbenannt',
+      color:p.color||'#818cf8',
+      type:p.type||'boolean',
+      target:p.type==='count'?(parseInt(p.target)||10):1,
+      active:true,
+      frequency:p.frequency||'regular',
+      createdDate:p.date||today
+    };
+    if(p.start_time&&p.duration_min){
+      todo.linkedStartTime=p.start_time;
+      todo.linkedDuration=parseInt(p.duration_min)||0;
+    }
+    data.todos.push(todo);
+    localStorage.setItem('daily-tracker-v2',JSON.stringify(data));
+    return{ok:true,todo};
+  }catch(e){
+    return{ok:false,error:e.message};
+  }
+}
+
+// ── Direktes Todo-Erstellen (Bypass) ─────────────────────────
+function createDirectTodo(){
+  const name=document.getElementById('d-name').value.trim();
+  if(!name){
+    document.getElementById('direct-result').innerHTML='<div class="status status-err">❌ Name eingeben!</div>';
+    return;
+  }
+  const p={
+    name,
+    frequency:document.getElementById('d-freq').value,
+    type:document.getElementById('d-type').value,
+    start_time:document.getElementById('d-time').value,
+    duration_min:parseInt(document.getElementById('d-dur').value)||0,
+    color:document.getElementById('d-color').value
+  };
+  const result=executeAddTodo(p);
+  const el=document.getElementById('direct-result');
+  if(result.ok){
+    el.innerHTML=`<div class="status status-ok">✓ Todo erstellt! Bitte daily-tracker.html neu laden.</div><pre>${JSON.stringify(result.todo,null,2)}</pre>`;
+  }else{
+    el.innerHTML=`<div class="status status-err">❌ Fehler: ${result.error}</div>`;
+  }
+  showCurrentTodos();
+}
+
+// ── Aktuelle Todos zeigen ─────────────────────────────────────
+function showCurrentTodos(){
+  try{
+    const data=JSON.parse(localStorage.getItem('daily-tracker-v2'))||{todos:[]};
+    const today=todayStr();
+    const todos=data.todos||[];
+    if(todos.length===0){
+      document.getElementById('todos-view').textContent='Keine Todos in localStorage.';
+      return;
+    }
+    const lines=todos.map(t=>{
+      const visible=(!t.frequency||t.frequency==='regular')
+        ||( t.frequency==='daily'&&t.createdDate===today)
+        ||( t.frequency==='weekly');
+      return`[${t.active!==false?'✓':'✗'}] "${t.name}" | freq=${t.frequency||'regular'} | createdDate=${t.createdDate||'?'} | sichtbar heute=${visible?'JA':'NEIN'} | id=${t.id}`;
+    }).join('\n');
+    document.getElementById('todos-view').textContent=`Heute ist: ${today}\n\n${lines}\n\n--- Vollständige Daten ---\n${JSON.stringify(todos,null,2)}`;
+  }catch(e){
+    document.getElementById('todos-view').textContent=`Fehler: ${e.message}`;
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────
+const savedKey=localStorage.getItem('overseer-api-key');
+if(savedKey)document.getElementById('cfg-key').value=savedKey;
+
+document.getElementById('cfg-key').addEventListener('change',function(){
+  if(this.value.trim())localStorage.setItem('overseer-api-key',this.value.trim());
+});
+
+refreshSnapshot();
+showCurrentTodos();
+</script>
+</body>
+</html>
