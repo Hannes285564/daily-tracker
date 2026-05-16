@@ -289,7 +289,7 @@ Erfinde keine Daten.`;
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
   <div style="display:flex;align-items:center;gap:8px">
     <span id="ovs-status-dot" class="ovs-status-dot"></span>
-    <span class="ovs-logo" style="font-size:1rem">◈ Overseer</span>
+    <span class="ovs-logo" style="font-size:1rem">◈ Overseer</span><span style="font-size:.72rem;color:var(--muted,#6b7280);margin-left:6px">(KI-Berater)</span>
   </div>
   <button id="ovs-toggle" class="ovs-btn-toggle" onclick="Overseer._togglePanel()">▾ Verlauf</button>
 </div>
@@ -320,7 +320,7 @@ Erfinde keine Daten.`;
       dlg.className = 'ovs-dialog';
       dlg.innerHTML = `
 <div class="ovs-dialog-header">
-  <span class="ovs-logo">◈ Overseer</span>
+  <span class="ovs-logo">◈ Overseer</span><span style="font-size:.72rem;color:var(--muted,#6b7280);margin-left:6px">(KI-Berater)</span>
   <button class="ovs-btn-toggle" onclick="document.getElementById('ovs-dialog').close()" style="padding:4px 10px">✕</button>
 </div>
 <div id="ovs-history-landing" class="ovs-history ovs-history-landing"></div>
