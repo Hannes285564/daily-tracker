@@ -34,6 +34,7 @@
 [data-theme="performance"] .tm-form{background:#141414;}
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:var(--font);background:var(--bg) center/cover fixed;color:var(--text);min-height:100vh;}
+body.auth-locked .wrap{filter:blur(12px);pointer-events:none;user-select:none;}
 ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 .bg-aurora{display:none;position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
 [data-theme="aurora"] .bg-aurora{display:block;}
@@ -386,6 +387,7 @@ p.collapsible-hdr{margin-bottom:10px;}
 .auth-user-btn.signed-in{color:var(--text);}
 .auth-user-email{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px;}
 .auth-overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.72);z-index:2000;padding:18px;}
+.auth-locked .auth-overlay{display:flex;}
 .auth-overlay.show{display:flex;}
 .auth-card{width:min(420px,100%);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:0 24px 80px rgba(0,0,0,.58);backdrop-filter:blur(18px);}
 [data-theme="performance"] .auth-card{background:#141414;backdrop-filter:none;}
@@ -402,7 +404,7 @@ p.collapsible-hdr{margin-bottom:10px;}
 .auth-message.ok{color:var(--success);}
 </style>
 </head>
-<body id="body">
+<body id="body" class="auth-locked">
 <input type="file" id="bg-input" accept="image/*" onchange="pickBg(this)">
 <div class="bg-aurora"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
 <div class="bg-forest"><div class="fl1"></div><div class="fl2"></div><div class="fl3"></div></div>
@@ -3803,6 +3805,7 @@ function hideTlTip(){const tip=document.getElementById('dp-tl-tip');if(tip)tip.s
 
   const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
   const TABLE='daily_tracker_user_state';
+  const REQUIRE_AUTH=true;
   let currentUser=null;
   let authMode='login';
   let channel=null;
@@ -3971,7 +3974,9 @@ function hideTlTip(){const tip=document.getElementById('dp-tl-tip');if(tip)tip.s
     if(email)email.textContent=currentUser?.email||'Login';
     if(signout)signout.style.display=currentUser?'':'none';
     if(submit)submit.style.display=currentUser?'none':'';
-    if(close)close.textContent=currentUser?'Schließen':'Später';
+    if(close){close.textContent=currentUser?'Schließen':'Login erforderlich';close.style.display=currentUser?'':'none';}
+    document.body.classList.toggle('auth-locked',REQUIRE_AUTH&&!currentUser);
+    document.getElementById('auth-overlay')?.classList.toggle('show',REQUIRE_AUTH&&!currentUser);
   }
 
   window.openAuthDialog=function(){
@@ -3979,7 +3984,14 @@ function hideTlTip(){const tip=document.getElementById('dp-tl-tip');if(tip)tip.s
     setAuthMessage(currentUser?'Du bist angemeldet. Deine Daten werden getrennt von anderen Nutzern gespeichert.':'');
     document.getElementById('auth-overlay')?.classList.add('show');
   };
-  window.closeAuthDialog=function(){document.getElementById('auth-overlay')?.classList.remove('show');};
+  window.closeAuthDialog=function(){
+    if(REQUIRE_AUTH&&!currentUser){
+      setAuthMessage('Bitte melde dich an, um die App zu verwenden.','err');
+      document.getElementById('auth-overlay')?.classList.add('show');
+      return;
+    }
+    document.getElementById('auth-overlay')?.classList.remove('show');
+  };
   window.setAuthMode=function(mode){
     authMode=mode;
     document.getElementById('auth-tab-login')?.classList.toggle('active',mode==='login');
@@ -4004,7 +4016,7 @@ function hideTlTip(){const tip=document.getElementById('dp-tl-tip');if(tip)tip.s
         :await sb.auth.signInWithPassword(opts);
       if(res.error){setAuthMessage(res.error.message,'err');return;}
       setAuthMessage(authMode==='signup'?'Account erstellt. Falls E-Mail-Bestätigung aktiv ist, prüfe dein Postfach.':'Angemeldet.','ok');
-      if(authMode==='login')closeAuthDialog();
+      if(authMode==='login'&&res.data?.session)closeAuthDialog();
     }catch(e){
       setAuthMessage(e.message||'Login fehlgeschlagen. Bitte erneut versuchen.','err');
     }finally{

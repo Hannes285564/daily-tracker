@@ -5,6 +5,7 @@
 <title>Daily Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
 :root,[data-theme="aurora"]{--bg:#07030f;--surface:rgba(255,255,255,.05);--border:rgba(255,255,255,.1);--text:#f0eafa;--muted:rgba(255,255,255,.4);--primary:#a78bfa;--accent:#34d399;--font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--radius:20px;--chb:rgba(167,139,250,.4);--sb:rgba(167,139,250,.12);--sc:#a78bfa;}
 [data-theme="apple"]{--bg:#000;--surface:#1c1c1e;--border:rgba(255,255,255,.07);--text:#fff;--muted:rgba(255,255,255,.45);--primary:#0a84ff;--accent:#30d158;--font:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;--radius:18px;--chb:rgba(255,255,255,.15);--sb:rgba(10,132,255,.12);--sc:#0a84ff;}
@@ -49,6 +50,25 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:14px 2
 .pill{padding:5px 13px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:.78rem;font-family:inherit;font-weight:500;cursor:pointer;transition:all .22s;}
 .pill.active{border-color:var(--primary);color:var(--primary);}
 .pill:hover:not(.active){color:var(--text);border-color:rgba(255,255,255,.22);}
+.auth-pill{max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.auth-locked .wrap{filter:blur(12px);pointer-events:none;user-select:none;}
+.auth-overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.76);z-index:2000;padding:18px;}
+.auth-locked .auth-overlay,.auth-overlay.show{display:flex;}
+.auth-card{width:min(430px,100%);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:0 24px 80px rgba(0,0,0,.62);}
+[data-theme="performance"] .auth-card{background:#141414;}
+.auth-card h2{font-size:1.35rem;margin-bottom:7px;letter-spacing:-.01em;}
+.auth-card p{font-size:.9rem;color:var(--muted);line-height:1.5;margin-bottom:16px;}
+.auth-tabs{display:flex;gap:8px;margin-bottom:14px;}
+.auth-tabs button{flex:1;padding:9px;border:1.5px solid var(--border);border-radius:10px;background:transparent;color:var(--muted);font:700 .82rem var(--font);cursor:pointer;}
+.auth-tabs button.active{border-color:var(--primary);color:var(--primary);background:color-mix(in srgb,var(--primary) 12%,transparent);}
+.auth-card input{width:100%;margin-bottom:10px;padding:11px 12px;border:1.5px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text);font:500 .9rem var(--font);outline:none;}
+.auth-card input:focus{border-color:var(--primary);}
+.auth-actions{display:flex;gap:10px;margin-top:8px;}
+.auth-actions .pill{flex:1;border-radius:10px;padding:10px 14px;}
+.auth-submit{background:var(--primary);color:#0a0a0a;border-color:var(--primary);font-weight:800;}
+.auth-message{min-height:1.2rem;margin-top:12px;font-size:.82rem;color:var(--muted);}
+.auth-message.err{color:#f87171;}
+.auth-message.ok{color:var(--accent);}
 /* hero */
 .hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px 24px 70px;text-align:center;}
 .eyebrow{font-size:.78rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
@@ -164,7 +184,7 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:14px 2
 }
 </style>
 </head>
-<body id="body">
+<body id="body" class="auth-locked">
 <input type="file" id="bg-input" accept="image/*" onchange="pickBg(this)">
 <div class="bg-aurora"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
 <div class="bg-forest"><div class="fl1"></div><div class="fl2"></div><div class="fl3"></div></div>
@@ -181,6 +201,7 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:14px 2
       <button class="pill" id="bg-btn" onclick="document.getElementById('bg-input').click()"></button>
       <button class="pill" id="l-de" onclick="setLang('de')">DE</button>
       <button class="pill" id="l-en" onclick="setLang('en')">EN</button>
+      <button class="pill auth-pill" id="landing-auth-btn" onclick="openLandingAuthDialog()">Login</button>
     </div>
   </nav>
 
@@ -280,9 +301,30 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:14px 2
     <div class="sbi"><div class="sbn" id="st3">—</div><div class="sbl" id="stl3"></div></div>
   </div>
 </div>
+<div id="landing-auth-overlay" class="auth-overlay">
+  <div class="auth-card">
+    <h2 id="landing-auth-title">Anmelden</h2>
+    <p id="landing-auth-copy">Melde dich an, um deinen Daily Tracker zu verwenden. Deine Daten bleiben mit deinem Account verknuepft.</p>
+    <div class="auth-tabs">
+      <button id="landing-auth-tab-login" class="active" onclick="setLandingAuthMode('login')">Login</button>
+      <button id="landing-auth-tab-signup" onclick="setLandingAuthMode('signup')">Registrieren</button>
+    </div>
+    <input type="email" id="landing-auth-email" autocomplete="email" placeholder="E-Mail">
+    <input type="password" id="landing-auth-password" autocomplete="current-password" placeholder="Passwort">
+    <div class="auth-actions">
+      <button class="pill auth-submit" id="landing-auth-submit-btn" onclick="submitLandingAuth()">Anmelden</button>
+    </div>
+    <div class="auth-message" id="landing-auth-message"></div>
+  </div>
+</div>
 
 <script>
 const THEME_KEY='dt-theme',LANG_KEY='dt-lang',BG_KEY='dt-bg',DATA_KEY='daily-tracker-v2';
+const SUPABASE_URL='https://ooifnnbefehrpfftqbiq.supabase.co';
+const SUPABASE_KEY='sb_publishable_bdCpzjkxvx0Rep-oHUWdzw_zgcXjGLU';
+let landingAuthMode='login';
+let landingAuthUser=null;
+const landingSb=window.supabase?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY):null;
 const T={
 de:{
   eyebrowA:'Dein persönlicher Begleiter',eyebrowF:'In Einklang mit deinen Zielen',eyebrowAp:'Persönlicher Tracker',
@@ -334,6 +376,55 @@ function setTheme(th){theme=th;localStorage.setItem(THEME_KEY,th);document.docum
 function setLang(l){lang=l;localStorage.setItem(LANG_KEY,l);render();}
 function todayStr(){return new Date().toISOString().split('T')[0];}
 function set(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
+function setLandingAuthMessage(msg,type){const el=document.getElementById('landing-auth-message');if(!el)return;el.textContent=msg||'';el.className='auth-message'+(type?' '+type:'');}
+function updateLandingAuthUi(){
+  const locked=!landingAuthUser;
+  document.body.classList.toggle('auth-locked',locked);
+  document.getElementById('landing-auth-overlay')?.classList.toggle('show',locked);
+  const btn=document.getElementById('landing-auth-btn');
+  if(btn)btn.textContent=landingAuthUser?.email||'Login';
+}
+function openLandingAuthDialog(){
+  if(landingAuthUser){location.href='daily-tracker.html';return;}
+  updateLandingAuthUi();
+  setLandingAuthMessage('Bitte melde dich an, um die App zu verwenden.');
+}
+function setLandingAuthMode(mode){
+  landingAuthMode=mode;
+  document.getElementById('landing-auth-tab-login')?.classList.toggle('active',mode==='login');
+  document.getElementById('landing-auth-tab-signup')?.classList.toggle('active',mode==='signup');
+  const submit=document.getElementById('landing-auth-submit-btn');
+  if(submit)submit.textContent=mode==='signup'?'Account erstellen':'Anmelden';
+  const pwd=document.getElementById('landing-auth-password');
+  if(pwd)pwd.autocomplete=mode==='signup'?'new-password':'current-password';
+  setLandingAuthMessage('');
+}
+async function submitLandingAuth(){
+  if(!landingSb){setLandingAuthMessage('Login konnte nicht geladen werden. Bitte Seite neu laden.','err');return;}
+  const email=document.getElementById('landing-auth-email')?.value.trim();
+  const password=document.getElementById('landing-auth-password')?.value;
+  if(!email||!password){setLandingAuthMessage('Bitte E-Mail und Passwort eingeben.','err');return;}
+  const submit=document.getElementById('landing-auth-submit-btn');
+  if(submit)submit.disabled=true;
+  setLandingAuthMessage(landingAuthMode==='signup'?'Account wird erstellt...':'Login laeuft...');
+  try{
+    const opts={email,password};
+    const res=landingAuthMode==='signup'
+      ?await landingSb.auth.signUp({...opts,options:{emailRedirectTo:location.origin+location.pathname}})
+      :await landingSb.auth.signInWithPassword(opts);
+    if(res.error){setLandingAuthMessage(res.error.message,'err');return;}
+    setLandingAuthMessage(landingAuthMode==='signup'?'Account erstellt. Falls E-Mail-Bestaetigung aktiv ist, pruefe dein Postfach.':'Angemeldet.','ok');
+    if(landingAuthMode==='login')location.href='daily-tracker.html';
+  }catch(e){setLandingAuthMessage(e.message||'Login fehlgeschlagen. Bitte erneut versuchen.','err');}
+  finally{if(submit)submit.disabled=false;}
+}
+async function initLandingAuth(){
+  if(!landingSb){setLandingAuthMessage('Login konnte nicht geladen werden. Bitte Seite neu laden.','err');updateLandingAuthUi();return;}
+  const {data:{session}}=await landingSb.auth.getSession();
+  landingAuthUser=session?.user||null;
+  updateLandingAuthUi();
+  landingSb.auth.onAuthStateChange((_event,session)=>{landingAuthUser=session?.user||null;updateLandingAuthUi();});
+}
 
 function primaryColor(){return theme==='apple'?'#0a84ff':theme==='forest'?'#34d399':theme==='performance'?'#5eead4':'#a78bfa';}
 function accentColor(){return theme==='apple'?'#30d158':theme==='forest'?'#2dd4bf':theme==='performance'?'#4ade80':'#34d399';}
@@ -562,6 +653,7 @@ function applyBg(url){document.getElementById('body').style.backgroundImage=`url
 const savedBg=localStorage.getItem(BG_KEY);if(savedBg)applyBg(savedBg);
 document.documentElement.setAttribute('data-theme',theme);
 render();
+initLandingAuth();
 </script>
 <button id="ovs-fab-btn"></button>
 <script src="overseer.js"></script>
