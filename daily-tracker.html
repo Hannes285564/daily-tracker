@@ -3737,15 +3737,15 @@ function hideTlTip(){const tip=document.getElementById('dp-tl-tip');if(tip)tip.s
 <script>
 // ── Supabase Cloud-Sync (Realtime) ────────────────────────────
 // Einmalig im Supabase SQL-Editor ausführen:
-// CREATE TABLE IF NOT EXISTS public.app_state (
+// CREATE TABLE IF NOT EXISTS public.daily_tracker_state (
 //   app_key   TEXT PRIMARY KEY,
 //   state     JSONB NOT NULL DEFAULT '{}',
 //   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 // );
-// ALTER TABLE public.app_state ENABLE ROW LEVEL SECURITY;
-// CREATE POLICY "anon_all" ON public.app_state
+// ALTER TABLE public.daily_tracker_state ENABLE ROW LEVEL SECURITY;
+// CREATE POLICY "anon_all" ON public.daily_tracker_state
 //   FOR ALL TO anon USING (true) WITH CHECK (true);
-// ALTER PUBLICATION supabase_realtime ADD TABLE public.app_state;
+// ALTER PUBLICATION supabase_realtime ADD TABLE public.daily_tracker_state;
 (function(){
   'use strict';
   if(!window.supabase){console.warn('[Sync] Supabase nicht geladen');return;}
@@ -3756,6 +3756,7 @@ function hideTlTip(){const tip=document.getElementById('dp-tl-tip');if(tip)tip.s
   const SYNC_KEYS=[DATA_KEY,HEALTH_KEY,PLAN_KEY,DAYPLAN_KEY,SCORE_KEY];
 
   const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  const TABLE='daily_tracker_state';
 
   // Originale localStorage-Methoden sichern (vor dem Patching)
   const _set=localStorage.setItem.bind(localStorage);
@@ -3823,7 +3824,7 @@ function hideTlTip(){const tip=document.getElementById('dp-tl-tip');if(tip)tip.s
     if(keepalive){
       // fetch mit keepalive für Tab-Close — Supabase-SDK unterstützt keepalive nicht
       try{
-        await fetch(`${SUPABASE_URL}/rest/v1/app_state`,{
+        await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}`,{
           method:'POST',keepalive:true,
           headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,
             'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
@@ -3834,12 +3835,12 @@ function hideTlTip(){const tip=document.getElementById('dp-tl-tip');if(tip)tip.s
       return;
     }
     try{
-      const{error}=await sb.from('app_state')
+      const{error}=await sb.from(TABLE)
         .upsert({app_key:APP_KEY,state,updated_at:new Date().toISOString()},{onConflict:'app_key'});
       if(error)throw error;
       lastSyncedJson=json;
       setDot('ok');
-    }catch(e){setDot('err');console.warn('[Sync] Push fehlgeschlagen:',e.message);}
+    }catch(e){setDot('err');toast('Sync-Fehler: '+e.message);console.warn('[Sync] Push fehlgeschlagen:',e.message);}
   }
 
   function queuePush(){clearTimeout(pushTimer);pushTimer=setTimeout(()=>push(),250);}
@@ -3873,7 +3874,7 @@ function hideTlTip(){const tip=document.getElementById('dp-tl-tip');if(tip)tip.s
   // ── Init: Pull + Realtime-Abo ─────────────────────────────
   async function init(){
     try{
-      const{data:row,error}=await sb.from('app_state')
+      const{data:row,error}=await sb.from(TABLE)
         .select('state').eq('app_key',APP_KEY).maybeSingle();
       if(error)throw error;
 
@@ -3892,16 +3893,16 @@ function hideTlTip(){const tip=document.getElementById('dp-tl-tip');if(tip)tip.s
         const local=readLocal();
         if(Object.keys(local).length>0){
           lastSyncedJson=JSON.stringify(local);
-          await sb.from('app_state')
+          await sb.from(TABLE)
             .upsert({app_key:APP_KEY,state:local,updated_at:new Date().toISOString()},{onConflict:'app_key'});
           setDot('ok');
         }
       }
-    }catch(e){setDot('err');console.warn('[Sync] Init fehlgeschlagen:',e.message);}
+    }catch(e){setDot('err');toast('☁️ Sync-Fehler: '+e.message);console.warn('[Sync] Init fehlgeschlagen:',e.message);}
 
     // Realtime-Abo — Änderungen anderer Geräte innerhalb ~1s empfangen
     sb.channel('dt-sync')
-      .on('postgres_changes',{event:'*',schema:'public',table:'app_state',
+      .on('postgres_changes',{event:'*',schema:'public',table:TABLE,
         filter:'app_key=eq.'+APP_KEY},payload=>{
         const newState=payload.new?.state;
         if(!newState)return;
