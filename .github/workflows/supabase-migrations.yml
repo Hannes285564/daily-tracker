@@ -3,6 +3,7 @@ name: Update Supabase
 on:
   push:
     branches:
+      - master
       - main
     paths:
       - "supabase/migrations/**"

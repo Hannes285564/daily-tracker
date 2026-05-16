@@ -3,12 +3,12 @@
 ## Netlify automatisch aktualisieren
 
 1. Projekt in ein GitHub-Repository pushen.
-2. In Netlify `Add new site` -> `Import an existing project` wählen.
+2. In Netlify `Add new site` -> `Import an existing project` waehlen.
 3. GitHub-Repository verbinden.
 4. Build settings:
    - Build command: leer lassen
    - Publish directory: `.`
-5. Danach aktualisiert Netlify die Website automatisch bei jedem Push auf `main`.
+5. Danach aktualisiert Netlify die Website automatisch bei jedem Push auf den verbundenen Deploy-Branch, aktuell `master`.
 
 ## Supabase automatisch aktualisieren
 
@@ -20,7 +20,7 @@ Damit GitHub Supabase automatisch aktualisiert:
 2. Secret `SUPABASE_DB_URL` anlegen.
 3. Wert aus Supabase kopieren: `Project Settings` -> `Database` -> `Connection string` -> URI.
 4. Passwort in der URI einsetzen.
-5. Danach läuft `.github/workflows/supabase-migrations.yml` bei jedem Push auf `main`, wenn Migrationen geändert wurden.
+5. Danach laeuft `.github/workflows/supabase-migrations.yml` bei jedem Push auf `master` oder `main`, wenn Migrationen geaendert wurden.
 
 Die aktuelle Auth-/RLS-Migration ist:
 

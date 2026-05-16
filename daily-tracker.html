@@ -82,6 +82,7 @@ select option{background:var(--bg);color:var(--text);}
 input[type=color]{width:44px;height:40px;padding:3px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;background:var(--bg);flex-shrink:0;}
 input[type=range]{width:100%;accent-color:var(--primary);cursor:pointer;}
 .btn{padding:10px 16px;border:none;border-radius:8px;cursor:pointer;font-size:.875rem;font-weight:500;font-family:var(--font);transition:all .2s;}
+.btn:disabled{opacity:.55;cursor:not-allowed;}
 .btn-primary{background:var(--primary);color:#0a0a0a;font-weight:700;}
 [data-theme="aurora"] .btn-primary{color:#0f172a;}
 .btn-primary:hover{opacity:.88;}
@@ -419,7 +420,7 @@ p.collapsible-hdr{margin-bottom:10px;}
     <button class="lang-btn" id="l-de" onclick="setLang('de')">DE</button>
     <button class="lang-btn" id="l-en" onclick="setLang('en')">EN</button>
     <button class="auth-user-btn" id="auth-user-btn" onclick="openAuthDialog()"><span>👤</span><span class="auth-user-email" id="auth-user-email">Login</span></button>
-    <span id="cloud-sync-dot" title="Cloud Sync" onclick="_copySyncCode?.()" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;cursor:pointer;opacity:.3;font-size:.9rem;transition:opacity .4s;user-select:none">☁</span>
+    <span id="cloud-sync-dot" title="Cloud Sync" onclick="openAuthDialog()" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;cursor:pointer;opacity:.3;font-size:.9rem;transition:opacity .4s;user-select:none">☁</span>
   </div>
 </div>
 <div class="tabs">
@@ -1078,9 +1079,9 @@ function setTheme(th){
   [chartP,chartS,chartW,chartKH,chartSL,chartHR,chartKB].forEach(c=>{if(c)c.destroy();});
   chartP=chartS=chartW=chartKH=chartSL=chartHR=chartKB=null;
   const act=document.querySelector('.tab-content.active');
-  if(act?.id==='tab-todos')renderTodos();else if(act?.id==='tab-sport')renderSport();else if(act?.id==='tab-health')renderHealth();else if(act?.id==='tab-plan')renderPlan();else if(act?.id==='tab-cal')renderCal();
+  if(act?.id==='tab-todos')renderTodos();else if(act?.id==='tab-sport')renderSport();else if(act?.id==='tab-health')renderHealth();else if(act?.id==='tab-plan')renderPlan();else if(act?.id==='tab-score')renderScore();else if(act?.id==='tab-day')renderDayPlan();else if(act?.id==='tab-track')renderTrackTab();
 }
-function setLang(l){lang=l;localStorage.setItem(LANG_KEY,l);applyLang();renderTodos();if(document.getElementById('tab-sport').classList.contains('active'))renderSport();if(document.getElementById('tab-health').classList.contains('active'))renderHealth();if(document.getElementById('tab-plan').classList.contains('active'))renderPlan();if(document.getElementById('tab-cal').classList.contains('active'))renderCal();}
+function setLang(l){lang=l;localStorage.setItem(LANG_KEY,l);applyLang();renderTodos();if(document.getElementById('tab-sport')?.classList.contains('active'))renderSport();if(document.getElementById('tab-health')?.classList.contains('active'))renderHealth();if(document.getElementById('tab-plan')?.classList.contains('active'))renderPlan();if(document.getElementById('tab-score')?.classList.contains('active'))renderScore();if(document.getElementById('tab-track')?.classList.contains('active'))renderTrackTab();if(document.getElementById('tab-day')?.classList.contains('active'))renderDayPlan();if(document.getElementById('tab-cal')?.classList.contains('active'))renderCal();}
 
 function applyLang(){
   const s=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
@@ -3797,7 +3798,7 @@ function hideTlTip(){const tip=document.getElementById('dp-tl-tip');if(tip)tip.s
 
   const SUPABASE_URL='https://ooifnnbefehrpfftqbiq.supabase.co';
   const SUPABASE_KEY='sb_publishable_bdCpzjkxvx0Rep-oHUWdzw_zgcXjGLU';
-  const SYNC_KEYS=[DATA_KEY,HEALTH_KEY,PLAN_KEY,CALENDAR_KEY,DAYPLAN_KEY,SCORE_KEY];
+  const SYNC_KEYS=[DATA_KEY,HEALTH_KEY,PLAN_KEY,CALENDAR_KEY,WORKOUT_TEMPLATES_KEY,DAYPLAN_KEY,SCORE_KEY];
   const USER_KEY='dt-auth-user-id';
 
   const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -3826,6 +3827,7 @@ function hideTlTip(){const tip=document.getElementById('dp-tl-tip');if(tip)tip.s
     healthData=defHealth();
     planData=defPlan();
     calData=defCalendar();
+    wtData=defWTData();
     dayPlan={wakeTime:'07:00',sleepTime:'22:30',byDate:{}};
     scoreData={byDate:{}};
   }
@@ -3845,6 +3847,7 @@ function hideTlTip(){const tip=document.getElementById('dp-tl-tip');if(tip)tip.s
     planData.plans=fp.plans;planData.activePlanId=fp.activePlanId;
     const fc=loadCalendar();
     calData.events=fc.events;
+    wtData=loadWorkoutTemplates();
     loadDayPlan();   // setzt dayPlan global neu
     loadScores();    // setzt scoreData global neu
     // Aktiven Tab neu rendern
@@ -3855,6 +3858,7 @@ function hideTlTip(){const tip=document.getElementById('dp-tl-tip');if(tip)tip.s
     else if(act?.id==='tab-plan')renderPlan();
     else if(act?.id==='tab-score')renderScore();
     else if(act?.id==='tab-day')renderDayPlan();
+    else if(act?.id==='tab-track')renderTrackTab();
     setDot('ok');
   }
 
@@ -3866,6 +3870,7 @@ function hideTlTip(){const tip=document.getElementById('dp-tl-tip');if(tip)tip.s
     else if(act?.id==='tab-plan')renderPlan();
     else if(act?.id==='tab-score')renderScore();
     else if(act?.id==='tab-day')renderDayPlan();
+    else if(act?.id==='tab-track')renderTrackTab();
   }
 
   // ── Input-Guard: keine Remote-Änderung während Nutzereingabe ─
@@ -3981,20 +3986,30 @@ function hideTlTip(){const tip=document.getElementById('dp-tl-tip');if(tip)tip.s
     document.getElementById('auth-tab-signup')?.classList.toggle('active',mode==='signup');
     const submit=document.getElementById('auth-submit-btn');
     if(submit)submit.textContent=mode==='signup'?'Account erstellen':'Anmelden';
+    const pwd=document.getElementById('auth-password');
+    if(pwd)pwd.autocomplete=mode==='signup'?'new-password':'current-password';
     setAuthMessage('');
   };
   window.submitAuth=async function(){
     const email=document.getElementById('auth-email')?.value.trim();
     const password=document.getElementById('auth-password')?.value;
     if(!email||!password){setAuthMessage('Bitte E-Mail und Passwort eingeben.','err');return;}
+    const submit=document.getElementById('auth-submit-btn');
+    if(submit)submit.disabled=true;
     setAuthMessage(authMode==='signup'?'Account wird erstellt...':'Login läuft...');
-    const opts={email,password};
-    const res=authMode==='signup'
-      ?await sb.auth.signUp({...opts,options:{emailRedirectTo:location.origin+location.pathname}})
-      :await sb.auth.signInWithPassword(opts);
-    if(res.error){setAuthMessage(res.error.message,'err');return;}
-    setAuthMessage(authMode==='signup'?'Account erstellt. Falls E-Mail-Bestätigung aktiv ist, prüfe dein Postfach.':'Angemeldet.','ok');
-    if(authMode==='login')closeAuthDialog();
+    try{
+      const opts={email,password};
+      const res=authMode==='signup'
+        ?await sb.auth.signUp({...opts,options:{emailRedirectTo:location.origin+location.pathname}})
+        :await sb.auth.signInWithPassword(opts);
+      if(res.error){setAuthMessage(res.error.message,'err');return;}
+      setAuthMessage(authMode==='signup'?'Account erstellt. Falls E-Mail-Bestätigung aktiv ist, prüfe dein Postfach.':'Angemeldet.','ok');
+      if(authMode==='login')closeAuthDialog();
+    }catch(e){
+      setAuthMessage(e.message||'Login fehlgeschlagen. Bitte erneut versuchen.','err');
+    }finally{
+      if(submit)submit.disabled=false;
+    }
   };
   window.signOutUser=async function(){
     await push();
