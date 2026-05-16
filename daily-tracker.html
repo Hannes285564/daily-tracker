@@ -618,13 +618,9 @@ p.collapsible-hdr{margin-bottom:10px;}
       </div>
       <div id="sync-preview"></div>
     </div>
-    <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
-      <div style="font-size:.78rem;color:var(--muted);margin-bottom:6px">☁️ Cloud-Sync-Code <span style="font-size:.7rem;opacity:.6">(zum Gerätewechsel)</span></div>
-      <div style="display:flex;gap:8px">
-        <input id="sync-code-display" type="text" readonly style="flex:1;font-size:.72rem;font-family:monospace;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);padding:6px 10px">
-        <button class="btn" onclick="_copySyncCode()" style="font-size:.75rem;padding:6px 14px;background:transparent;border:1px solid var(--border);color:var(--muted);white-space:nowrap;font-family:inherit">Kopieren</button>
-      </div>
-      <div style="font-size:.7rem;color:var(--muted);margin-top:6px">Auf neuem Gerät Code eingeben: <button onclick="_enterSyncCode()" style="background:none;border:none;color:var(--primary);font-size:.7rem;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline">Code wechseln</button></div>
+    <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px">
+      <span id="sync-card-dot" style="width:8px;height:8px;border-radius:50%;background:var(--primary);opacity:.3;flex-shrink:0;transition:opacity .4s,background .3s"></span>
+      <span id="sync-card-txt" style="font-size:.78rem;color:var(--muted)">☁️ Cloud-Sync — Handy &amp; PC synchronisieren automatisch</span>
     </div>
     </div>
   </div>
@@ -3739,97 +3735,191 @@ function hideTlTip(){const tip=document.getElementById('dp-tl-tip');if(tip)tip.s
   <div id="dp-tl-tip-time" class="tl-tip-time"></div>
 </div>
 <script>
-// ── Supabase Cloud-Sync ───────────────────────────────────────
-// Einmalig in Supabase SQL-Editor ausführen:
-// CREATE TABLE tracker_sync (
-//   user_id TEXT NOT NULL, data_key TEXT NOT NULL,
-//   data_json JSONB NOT NULL, updated_at TIMESTAMPTZ DEFAULT NOW(),
-//   PRIMARY KEY (user_id, data_key)
+// ── Supabase Cloud-Sync (Realtime) ────────────────────────────
+// Einmalig im Supabase SQL-Editor ausführen:
+// CREATE TABLE IF NOT EXISTS public.app_state (
+//   app_key   TEXT PRIMARY KEY,
+//   state     JSONB NOT NULL DEFAULT '{}',
+//   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 // );
-// Dann: Supabase → Table Editor → tracker_sync → RLS deaktivieren
+// ALTER TABLE public.app_state ENABLE ROW LEVEL SECURITY;
+// CREATE POLICY "anon_all" ON public.app_state
+//   FOR ALL TO anon USING (true) WITH CHECK (true);
+// ALTER PUBLICATION supabase_realtime ADD TABLE public.app_state;
 (function(){
   'use strict';
   if(!window.supabase){console.warn('[Sync] Supabase nicht geladen');return;}
-  const SB_URL='https://ooifnnbefehrpfftqbiq.supabase.co';
-  const SB_KEY='sb_publishable_bdCpzjkxvx0Rep-oHUWdzw_zgcXjGLU';
-  const sb=window.supabase.createClient(SB_URL,SB_KEY);
 
-  // Stabiler Geräte-Identifier
-  let userId=localStorage.getItem('dt-user-id');
-  if(!userId){
-    userId=(crypto.randomUUID?.())||(Math.random().toString(36).slice(2)+Date.now().toString(36));
-    localStorage.setItem('dt-user-id',userId);
-  }
-  const codeEl=document.getElementById('sync-code-display');
-  if(codeEl)codeEl.value=userId;
-
-  window._copySyncCode=function(){
-    navigator.clipboard?.writeText(userId).then(()=>toast('Sync-Code kopiert ✓'));
-  };
-  window._enterSyncCode=function(){
-    const code=prompt(lang==='de'?'Sync-Code eingeben (von anderem Gerät):':'Enter sync code from other device:');
-    if(code?.trim()){localStorage.setItem('dt-user-id',code.trim());location.reload();}
-  };
-
+  const SUPABASE_URL='https://ooifnnbefehrpfftqbiq.supabase.co';
+  const SUPABASE_KEY='sb_publishable_bdCpzjkxvx0Rep-oHUWdzw_zgcXjGLU';
+  const APP_KEY='daily-tracker';
   const SYNC_KEYS=[DATA_KEY,HEALTH_KEY,PLAN_KEY,DAYPLAN_KEY,SCORE_KEY];
 
-  function setCloudDot(state){
-    const dot=document.getElementById('cloud-sync-dot');
-    if(!dot)return;
-    if(state==='ok'){dot.textContent='☁';dot.style.opacity='1';dot.title='☁️ Synced';setTimeout(()=>dot.style.opacity='.45',2500);}
-    else if(state==='err'){dot.textContent='⚠';dot.style.opacity='1';dot.title='Sync-Fehler — Supabase-Tabelle prüfen';}
-    else{dot.style.opacity='.3';}
+  const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+  // Originale localStorage-Methoden sichern (vor dem Patching)
+  const _set=localStorage.setItem.bind(localStorage);
+  const _del=localStorage.removeItem.bind(localStorage);
+
+  // ── State lesen / schreiben ───────────────────────────────
+  function readLocal(){
+    const out={};
+    for(const k of SYNC_KEYS){
+      const v=localStorage.getItem(k);
+      if(v)try{out[k]=JSON.parse(v);}catch{}
+    }
+    return out;
   }
 
-  let syncTimer=null;
-  function queueSync(){clearTimeout(syncTimer);syncTimer=setTimeout(pushAll,2000);}
-
-  async function pushAll(){
-    const rows=SYNC_KEYS.map(key=>{
-      const val=localStorage.getItem(key);if(!val)return null;
-      try{return{user_id:userId,data_key:key,data_json:JSON.parse(val),updated_at:new Date().toISOString()};}catch{return null;}
-    }).filter(Boolean);
-    if(!rows.length)return;
-    try{
-      const{error}=await sb.from('tracker_sync').upsert(rows,{onConflict:'user_id,data_key'});
-      if(error)throw error;
-      setCloudDot('ok');
-    }catch(e){setCloudDot('err');console.warn('[Sync] push failed:',e.message);}
+  function applyRemote(state){
+    // Schreiben über _set um Patch-Loop zu vermeiden
+    for(const k of SYNC_KEYS){
+      if(state[k]!==undefined)_set(k,JSON.stringify(state[k]));
+    }
+    // In-Memory-Globals aktualisieren
+    const f=load();
+    data.todos=f.todos;data.completions=f.completions;data.activities=f.activities;
+    const fh=loadHealth();
+    healthData.profile=fh.profile;healthData.entries=fh.entries;
+    const fp=loadPlan();
+    planData.plans=fp.plans;planData.activePlanId=fp.activePlanId;
+    loadDayPlan();   // setzt dayPlan global neu
+    loadScores();    // setzt scoreData global neu
+    // Aktiven Tab neu rendern
+    const act=document.querySelector('.tab-content.active');
+    if(act?.id==='tab-todos')renderTodos();
+    else if(act?.id==='tab-sport')renderSport();
+    else if(act?.id==='tab-health')renderHealth();
+    else if(act?.id==='tab-plan')renderPlan();
+    else if(act?.id==='tab-score')renderScore();
+    else if(act?.id==='tab-day')renderDayPlan();
+    setDot('ok');
   }
 
-  async function pullAll(){
-    try{
-      const{data:rows,error}=await sb.from('tracker_sync').select('data_key,data_json').eq('user_id',userId);
-      if(error)throw error;
-      if(!rows?.length)return;
-      for(const row of rows)localStorage.setItem(row.data_key,JSON.stringify(row.data_json));
-      // In-Memory-Globals aktualisieren
-      const f=load();data.todos=f.todos;data.completions=f.completions;data.activities=f.activities;
-      const fh=loadHealth();healthData.profile=fh.profile;healthData.entries=fh.entries;
-      // Aktiven Tab neu rendern
-      const act=document.querySelector('.tab-content.active');
-      if(act?.id==='tab-todos')renderTodos();
-      else if(act?.id==='tab-sport')renderSport();
-      else if(act?.id==='tab-health')renderHealth();
-      else if(act?.id==='tab-plan')renderPlan();
-      else if(act?.id==='tab-score')renderScore();
-      else if(act?.id==='tab-day')renderDayPlan();
-      setCloudDot('ok');
-    }catch(e){console.warn('[Sync] pull failed:',e.message);}
+  // ── Input-Guard: keine Remote-Änderung während Nutzereingabe ─
+  let pendingRemote=null;
+  function isEditing(){
+    const el=document.activeElement;
+    return el&&(el.tagName==='INPUT'||el.tagName==='TEXTAREA'||el.tagName==='SELECT'||el.isContentEditable);
   }
-
-  // Save-Funktionen abfangen → nach jedem Speichern 2s später pushen
-  ['save','saveHealth','savePlan','saveDayPlan','saveScores'].forEach(name=>{
-    const orig=window[name];
-    if(typeof orig!=='function')return;
-    window[name]=function(){orig.apply(this,arguments);queueSync();};
+  function scheduleApply(state){
+    if(isEditing()){pendingRemote=state;return;}
+    applyRemote(state);pendingRemote=null;
+  }
+  document.addEventListener('focusout',()=>{
+    if(pendingRemote){const s=pendingRemote;pendingRemote=null;applyRemote(s);}
   });
 
-  // Beim Tab-Wechsel / Seite schließen sofort pushen
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')pushAll();});
+  // ── Push ──────────────────────────────────────────────────
+  let lastSyncedJson=null;
+  let pushTimer=null;
 
-  // Beim Start: Daten aus Cloud laden
-  pullAll();
+  async function push(keepalive=false){
+    clearTimeout(pushTimer);
+    const state=readLocal();
+    const json=JSON.stringify(state);
+    if(json===lastSyncedJson)return;   // nichts Neues
+    const body=JSON.stringify({app_key:APP_KEY,state,updated_at:new Date().toISOString()});
+    if(keepalive){
+      // fetch mit keepalive für Tab-Close — Supabase-SDK unterstützt keepalive nicht
+      try{
+        await fetch(`${SUPABASE_URL}/rest/v1/app_state`,{
+          method:'POST',keepalive:true,
+          headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,
+            'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+          body
+        });
+        lastSyncedJson=json;
+      }catch(e){console.warn('[Sync] keepalive-Push fehlgeschlagen:',e.message);}
+      return;
+    }
+    try{
+      const{error}=await sb.from('app_state')
+        .upsert({app_key:APP_KEY,state,updated_at:new Date().toISOString()},{onConflict:'app_key'});
+      if(error)throw error;
+      lastSyncedJson=json;
+      setDot('ok');
+    }catch(e){setDot('err');console.warn('[Sync] Push fehlgeschlagen:',e.message);}
+  }
+
+  function queuePush(){clearTimeout(pushTimer);pushTimer=setTimeout(()=>push(),250);}
+
+  // ── localStorage monkey-patchen ───────────────────────────
+  localStorage.setItem=function(key,value){
+    try{_set(key,value);}catch(e){throw e;}
+    if(SYNC_KEYS.includes(key))queuePush();
+  };
+  localStorage.removeItem=function(key){
+    try{_del(key);}catch(e){throw e;}
+    if(SYNC_KEYS.includes(key))queuePush();
+  };
+
+  // ── Dot-Indikator ─────────────────────────────────────────
+  function setDot(state){
+    const topDot=document.getElementById('cloud-sync-dot');
+    const cardDot=document.getElementById('sync-card-dot');
+    const cardTxt=document.getElementById('sync-card-txt');
+    if(state==='ok'){
+      if(topDot){topDot.textContent='☁';topDot.style.opacity='1';topDot.title='Synced ✓';setTimeout(()=>topDot.style.opacity='.45',2500);}
+      if(cardDot){cardDot.style.background='var(--primary)';cardDot.style.opacity='1';setTimeout(()=>cardDot.style.opacity='.4',2500);}
+      if(cardTxt)cardTxt.textContent='☁️ Cloud-Sync aktiv — Handy & PC synchronisieren automatisch';
+    }else if(state==='err'){
+      if(topDot){topDot.textContent='⚠';topDot.style.opacity='1';topDot.title='Sync-Fehler — SQL-Tabelle prüfen';}
+      if(cardDot){cardDot.style.background='#f87171';cardDot.style.opacity='1';}
+      if(cardTxt)cardTxt.textContent='⚠️ Sync-Fehler — Supabase-Tabelle app_state prüfen';
+    }
+  }
+
+  // ── Init: Pull + Realtime-Abo ─────────────────────────────
+  async function init(){
+    try{
+      const{data:row,error}=await sb.from('app_state')
+        .select('state').eq('app_key',APP_KEY).maybeSingle();
+      if(error)throw error;
+
+      if(row?.state&&Object.keys(row.state).length>0){
+        // Remote hat Daten → anwenden wenn verschieden
+        const remoteJson=JSON.stringify(row.state);
+        if(remoteJson!==JSON.stringify(readLocal())){
+          lastSyncedJson=remoteJson;
+          applyRemote(row.state);
+        }else{
+          lastSyncedJson=remoteJson;
+          setDot('ok');
+        }
+      }else{
+        // Erste Nutzung: lokale Daten hochladen damit nichts verloren geht
+        const local=readLocal();
+        if(Object.keys(local).length>0){
+          lastSyncedJson=JSON.stringify(local);
+          await sb.from('app_state')
+            .upsert({app_key:APP_KEY,state:local,updated_at:new Date().toISOString()},{onConflict:'app_key'});
+          setDot('ok');
+        }
+      }
+    }catch(e){setDot('err');console.warn('[Sync] Init fehlgeschlagen:',e.message);}
+
+    // Realtime-Abo — Änderungen anderer Geräte innerhalb ~1s empfangen
+    sb.channel('dt-sync')
+      .on('postgres_changes',{event:'*',schema:'public',table:'app_state',
+        filter:'app_key=eq.'+APP_KEY},payload=>{
+        const newState=payload.new?.state;
+        if(!newState)return;
+        const incoming=JSON.stringify(newState);
+        if(incoming===lastSyncedJson)return;  // eigenes Echo ignorieren
+        lastSyncedJson=incoming;
+        scheduleApply(newState);
+      })
+      .subscribe();
+  }
+
+  // ── Beim Schließen sofort flushen ─────────────────────────
+  const flush=()=>push(true);
+  window.addEventListener('pagehide',flush);
+  window.addEventListener('beforeunload',flush);
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')flush();});
+
+  init();
 })();
 </script>
 <script src="overseer.js"></script>
