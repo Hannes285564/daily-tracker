@@ -6,6 +6,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root,[data-theme="aurora"]{--bg:#07030f;--surface:rgba(255,255,255,.06);--surface2:rgba(255,255,255,.04);--border:rgba(255,255,255,.1);--text:#f0eafa;--muted:rgba(255,255,255,.4);--primary:#a78bfa;--success:#4ade80;--danger:#f87171;--danger-bg:rgba(248,113,113,.1);--font:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--radius:16px;--chart-grid:rgba(255,255,255,.06);}
 [data-theme="apple"]{--bg:#000;--surface:#1c1c1e;--surface2:#2c2c2e;--border:rgba(255,255,255,.08);--text:#fff;--muted:rgba(255,255,255,.45);--primary:#0a84ff;--success:#30d158;--danger:#ff453a;--danger-bg:rgba(255,69,58,.1);--font:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;--radius:12px;--chart-grid:rgba(255,255,255,.06);}
@@ -398,6 +399,7 @@ p.collapsible-hdr{margin-bottom:10px;}
     <button class="bg-btn" id="bg-btn" onclick="document.getElementById('bg-input').click()"></button>
     <button class="lang-btn" id="l-de" onclick="setLang('de')">DE</button>
     <button class="lang-btn" id="l-en" onclick="setLang('en')">EN</button>
+    <span id="cloud-sync-dot" title="Cloud Sync" onclick="_copySyncCode?.()" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;cursor:pointer;opacity:.3;font-size:.9rem;transition:opacity .4s;user-select:none">☁</span>
   </div>
 </div>
 <div class="tabs">
@@ -615,6 +617,14 @@ p.collapsible-hdr{margin-bottom:10px;}
         <button class="btn" onclick="triggerImport('.json')" style="flex:1">🔗 JSON</button>
       </div>
       <div id="sync-preview"></div>
+    </div>
+    <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+      <div style="font-size:.78rem;color:var(--muted);margin-bottom:6px">☁️ Cloud-Sync-Code <span style="font-size:.7rem;opacity:.6">(zum Gerätewechsel)</span></div>
+      <div style="display:flex;gap:8px">
+        <input id="sync-code-display" type="text" readonly style="flex:1;font-size:.72rem;font-family:monospace;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);padding:6px 10px">
+        <button class="btn" onclick="_copySyncCode()" style="font-size:.75rem;padding:6px 14px;background:transparent;border:1px solid var(--border);color:var(--muted);white-space:nowrap;font-family:inherit">Kopieren</button>
+      </div>
+      <div style="font-size:.7rem;color:var(--muted);margin-top:6px">Auf neuem Gerät Code eingeben: <button onclick="_enterSyncCode()" style="background:none;border:none;color:var(--primary);font-size:.7rem;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline">Code wechseln</button></div>
     </div>
     </div>
   </div>
@@ -3728,6 +3738,100 @@ function hideTlTip(){const tip=document.getElementById('dp-tl-tip');if(tip)tip.s
   <div id="dp-tl-tip-name" class="tl-tip-name"></div>
   <div id="dp-tl-tip-time" class="tl-tip-time"></div>
 </div>
+<script>
+// ── Supabase Cloud-Sync ───────────────────────────────────────
+// Einmalig in Supabase SQL-Editor ausführen:
+// CREATE TABLE tracker_sync (
+//   user_id TEXT NOT NULL, data_key TEXT NOT NULL,
+//   data_json JSONB NOT NULL, updated_at TIMESTAMPTZ DEFAULT NOW(),
+//   PRIMARY KEY (user_id, data_key)
+// );
+// Dann: Supabase → Table Editor → tracker_sync → RLS deaktivieren
+(function(){
+  'use strict';
+  if(!window.supabase){console.warn('[Sync] Supabase nicht geladen');return;}
+  const SB_URL='https://ooifnnbefehrpfftqbiq.supabase.co';
+  const SB_KEY='sb_publishable_bdCpzjkxvx0Rep-oHUWdzw_zgcXjGLU';
+  const sb=window.supabase.createClient(SB_URL,SB_KEY);
+
+  // Stabiler Geräte-Identifier
+  let userId=localStorage.getItem('dt-user-id');
+  if(!userId){
+    userId=(crypto.randomUUID?.())||(Math.random().toString(36).slice(2)+Date.now().toString(36));
+    localStorage.setItem('dt-user-id',userId);
+  }
+  const codeEl=document.getElementById('sync-code-display');
+  if(codeEl)codeEl.value=userId;
+
+  window._copySyncCode=function(){
+    navigator.clipboard?.writeText(userId).then(()=>toast('Sync-Code kopiert ✓'));
+  };
+  window._enterSyncCode=function(){
+    const code=prompt(lang==='de'?'Sync-Code eingeben (von anderem Gerät):':'Enter sync code from other device:');
+    if(code?.trim()){localStorage.setItem('dt-user-id',code.trim());location.reload();}
+  };
+
+  const SYNC_KEYS=[DATA_KEY,HEALTH_KEY,PLAN_KEY,DAYPLAN_KEY,SCORE_KEY];
+
+  function setCloudDot(state){
+    const dot=document.getElementById('cloud-sync-dot');
+    if(!dot)return;
+    if(state==='ok'){dot.textContent='☁';dot.style.opacity='1';dot.title='☁️ Synced';setTimeout(()=>dot.style.opacity='.45',2500);}
+    else if(state==='err'){dot.textContent='⚠';dot.style.opacity='1';dot.title='Sync-Fehler — Supabase-Tabelle prüfen';}
+    else{dot.style.opacity='.3';}
+  }
+
+  let syncTimer=null;
+  function queueSync(){clearTimeout(syncTimer);syncTimer=setTimeout(pushAll,2000);}
+
+  async function pushAll(){
+    const rows=SYNC_KEYS.map(key=>{
+      const val=localStorage.getItem(key);if(!val)return null;
+      try{return{user_id:userId,data_key:key,data_json:JSON.parse(val),updated_at:new Date().toISOString()};}catch{return null;}
+    }).filter(Boolean);
+    if(!rows.length)return;
+    try{
+      const{error}=await sb.from('tracker_sync').upsert(rows,{onConflict:'user_id,data_key'});
+      if(error)throw error;
+      setCloudDot('ok');
+    }catch(e){setCloudDot('err');console.warn('[Sync] push failed:',e.message);}
+  }
+
+  async function pullAll(){
+    try{
+      const{data:rows,error}=await sb.from('tracker_sync').select('data_key,data_json').eq('user_id',userId);
+      if(error)throw error;
+      if(!rows?.length)return;
+      for(const row of rows)localStorage.setItem(row.data_key,JSON.stringify(row.data_json));
+      // In-Memory-Globals aktualisieren
+      const f=load();data.todos=f.todos;data.completions=f.completions;data.activities=f.activities;
+      const fh=loadHealth();healthData.profile=fh.profile;healthData.entries=fh.entries;
+      // Aktiven Tab neu rendern
+      const act=document.querySelector('.tab-content.active');
+      if(act?.id==='tab-todos')renderTodos();
+      else if(act?.id==='tab-sport')renderSport();
+      else if(act?.id==='tab-health')renderHealth();
+      else if(act?.id==='tab-plan')renderPlan();
+      else if(act?.id==='tab-score')renderScore();
+      else if(act?.id==='tab-day')renderDayPlan();
+      setCloudDot('ok');
+    }catch(e){console.warn('[Sync] pull failed:',e.message);}
+  }
+
+  // Save-Funktionen abfangen → nach jedem Speichern 2s später pushen
+  ['save','saveHealth','savePlan','saveDayPlan','saveScores'].forEach(name=>{
+    const orig=window[name];
+    if(typeof orig!=='function')return;
+    window[name]=function(){orig.apply(this,arguments);queueSync();};
+  });
+
+  // Beim Tab-Wechsel / Seite schließen sofort pushen
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')pushAll();});
+
+  // Beim Start: Daten aus Cloud laden
+  pullAll();
+})();
+</script>
 <script src="overseer.js"></script>
 <script>
 Overseer.init({page:'tracker', mount:document.getElementById('ovs-card-mount')});
