@@ -380,6 +380,25 @@ p.collapsible-hdr{margin-bottom:10px;}
 .focus-vol{width:140px;accent-color:var(--primary);}
 .focus-stop-btn{padding:11px 32px;border-radius:12px;border:none;background:rgba(248,113,113,.15);color:#f87171;font-size:.9rem;font-weight:700;font-family:inherit;cursor:pointer;transition:background .2s;}
 .focus-stop-btn:hover{background:rgba(248,113,113,.28);}
+.auth-user-btn{display:inline-flex;align-items:center;gap:7px;max-width:210px;padding:6px 10px;border:1.5px solid var(--border);border-radius:999px;background:transparent;color:var(--muted);font-size:.76rem;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s;}
+.auth-user-btn:hover{border-color:var(--primary);color:var(--primary);}
+.auth-user-btn.signed-in{color:var(--text);}
+.auth-user-email{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px;}
+.auth-overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.72);z-index:2000;padding:18px;}
+.auth-overlay.show{display:flex;}
+.auth-card{width:min(420px,100%);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:0 24px 80px rgba(0,0,0,.58);backdrop-filter:blur(18px);}
+[data-theme="performance"] .auth-card{background:#141414;backdrop-filter:none;}
+.auth-card h2{font-size:1.25rem;margin-bottom:6px;}
+.auth-card p{font-size:.86rem;color:var(--muted);line-height:1.45;margin-bottom:16px;}
+.auth-tabs{display:flex;gap:8px;margin-bottom:14px;}
+.auth-tabs button{flex:1;padding:9px;border:1.5px solid var(--border);border-radius:10px;background:transparent;color:var(--muted);font:700 .82rem var(--font);cursor:pointer;}
+.auth-tabs button.active{border-color:var(--primary);color:var(--primary);background:color-mix(in srgb,var(--primary) 12%,transparent);}
+.auth-card input{margin-bottom:10px;}
+.auth-actions{display:flex;gap:10px;margin-top:8px;}
+.auth-actions .btn{flex:1;}
+.auth-message{min-height:1.2rem;margin-top:12px;font-size:.8rem;color:var(--muted);}
+.auth-message.err{color:var(--danger);}
+.auth-message.ok{color:var(--success);}
 </style>
 </head>
 <body id="body">
@@ -399,6 +418,7 @@ p.collapsible-hdr{margin-bottom:10px;}
     <button class="bg-btn" id="bg-btn" onclick="document.getElementById('bg-input').click()"></button>
     <button class="lang-btn" id="l-de" onclick="setLang('de')">DE</button>
     <button class="lang-btn" id="l-en" onclick="setLang('en')">EN</button>
+    <button class="auth-user-btn" id="auth-user-btn" onclick="openAuthDialog()"><span>👤</span><span class="auth-user-email" id="auth-user-email">Login</span></button>
     <span id="cloud-sync-dot" title="Cloud Sync" onclick="_copySyncCode?.()" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;cursor:pointer;opacity:.3;font-size:.9rem;transition:opacity .4s;user-select:none">☁</span>
   </div>
 </div>
@@ -3734,29 +3754,57 @@ function hideTlTip(){const tip=document.getElementById('dp-tl-tip');if(tip)tip.s
   <div id="dp-tl-tip-name" class="tl-tip-name"></div>
   <div id="dp-tl-tip-time" class="tl-tip-time"></div>
 </div>
+<div id="auth-overlay" class="auth-overlay">
+  <div class="auth-card">
+    <h2 id="auth-title">Anmelden</h2>
+    <p id="auth-copy">Melde dich an, damit deine Todos und Tracker-Daten nur in deinem Account gespeichert werden.</p>
+    <div class="auth-tabs">
+      <button id="auth-tab-login" class="active" onclick="setAuthMode('login')">Login</button>
+      <button id="auth-tab-signup" onclick="setAuthMode('signup')">Registrieren</button>
+    </div>
+    <input type="email" id="auth-email" autocomplete="email" placeholder="E-Mail">
+    <input type="password" id="auth-password" autocomplete="current-password" placeholder="Passwort">
+    <div class="auth-actions">
+      <button class="btn" id="auth-close-btn" onclick="closeAuthDialog()" style="border:1px solid var(--border);color:var(--muted);background:transparent">Schließen</button>
+      <button class="btn btn-primary" id="auth-submit-btn" onclick="submitAuth()">Anmelden</button>
+    </div>
+    <button class="btn" id="auth-signout-btn" onclick="signOutUser()" style="display:none;width:100%;margin-top:10px;border:1px solid var(--border);color:var(--danger);background:transparent">Abmelden</button>
+    <div class="auth-message" id="auth-message"></div>
+  </div>
+</div>
 <script>
-// ── Supabase Cloud-Sync (Realtime) ────────────────────────────
+// ── Supabase Auth + Cloud-Sync (Realtime) ─────────────────────
 // Einmalig im Supabase SQL-Editor ausführen:
-// CREATE TABLE IF NOT EXISTS public.daily_tracker_state (
-//   app_key   TEXT PRIMARY KEY,
-//   state     JSONB NOT NULL DEFAULT '{}',
+// CREATE TABLE IF NOT EXISTS public.daily_tracker_user_state (
+//   user_id    UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+//   state      JSONB NOT NULL DEFAULT '{}',
 //   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 // );
-// ALTER TABLE public.daily_tracker_state ENABLE ROW LEVEL SECURITY;
-// CREATE POLICY "anon_all" ON public.daily_tracker_state
-//   FOR ALL TO anon USING (true) WITH CHECK (true);
-// ALTER PUBLICATION supabase_realtime ADD TABLE public.daily_tracker_state;
+// ALTER TABLE public.daily_tracker_user_state ENABLE ROW LEVEL SECURITY;
+// DROP POLICY IF EXISTS "daily_tracker_select_own" ON public.daily_tracker_user_state;
+// DROP POLICY IF EXISTS "daily_tracker_insert_own" ON public.daily_tracker_user_state;
+// DROP POLICY IF EXISTS "daily_tracker_update_own" ON public.daily_tracker_user_state;
+// CREATE POLICY "daily_tracker_select_own" ON public.daily_tracker_user_state
+//   FOR SELECT TO authenticated USING (auth.uid() = user_id);
+// CREATE POLICY "daily_tracker_insert_own" ON public.daily_tracker_user_state
+//   FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+// CREATE POLICY "daily_tracker_update_own" ON public.daily_tracker_user_state
+//   FOR UPDATE TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+// ALTER PUBLICATION supabase_realtime ADD TABLE public.daily_tracker_user_state;
 (function(){
   'use strict';
   if(!window.supabase){console.warn('[Sync] Supabase nicht geladen');return;}
 
   const SUPABASE_URL='https://ooifnnbefehrpfftqbiq.supabase.co';
   const SUPABASE_KEY='sb_publishable_bdCpzjkxvx0Rep-oHUWdzw_zgcXjGLU';
-  const APP_KEY='daily-tracker';
-  const SYNC_KEYS=[DATA_KEY,HEALTH_KEY,PLAN_KEY,DAYPLAN_KEY,SCORE_KEY];
+  const SYNC_KEYS=[DATA_KEY,HEALTH_KEY,PLAN_KEY,CALENDAR_KEY,DAYPLAN_KEY,SCORE_KEY];
+  const USER_KEY='dt-auth-user-id';
 
   const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-  const TABLE='daily_tracker_state';
+  const TABLE='daily_tracker_user_state';
+  let currentUser=null;
+  let authMode='login';
+  let channel=null;
 
   // Originale localStorage-Methoden sichern (vor dem Patching)
   const _set=localStorage.setItem.bind(localStorage);
@@ -3772,10 +3820,21 @@ function hideTlTip(){const tip=document.getElementById('dp-tl-tip');if(tip)tip.s
     return out;
   }
 
+  function resetSyncedLocal(){
+    for(const k of SYNC_KEYS)_del(k);
+    data=defData();
+    healthData=defHealth();
+    planData=defPlan();
+    calData=defCalendar();
+    dayPlan={wakeTime:'07:00',sleepTime:'22:30',byDate:{}};
+    scoreData={byDate:{}};
+  }
+
   function applyRemote(state){
     // Schreiben über _set um Patch-Loop zu vermeiden
     for(const k of SYNC_KEYS){
       if(state[k]!==undefined)_set(k,JSON.stringify(state[k]));
+      else _del(k);
     }
     // In-Memory-Globals aktualisieren
     const f=load();
@@ -3784,6 +3843,8 @@ function hideTlTip(){const tip=document.getElementById('dp-tl-tip');if(tip)tip.s
     healthData.profile=fh.profile;healthData.entries=fh.entries;
     const fp=loadPlan();
     planData.plans=fp.plans;planData.activePlanId=fp.activePlanId;
+    const fc=loadCalendar();
+    calData.events=fc.events;
     loadDayPlan();   // setzt dayPlan global neu
     loadScores();    // setzt scoreData global neu
     // Aktiven Tab neu rendern
@@ -3795,6 +3856,16 @@ function hideTlTip(){const tip=document.getElementById('dp-tl-tip');if(tip)tip.s
     else if(act?.id==='tab-score')renderScore();
     else if(act?.id==='tab-day')renderDayPlan();
     setDot('ok');
+  }
+
+  function renderAfterAuthChange(){
+    const act=document.querySelector('.tab-content.active');
+    if(act?.id==='tab-todos')renderTodos();
+    else if(act?.id==='tab-sport')renderSport();
+    else if(act?.id==='tab-health')renderHealth();
+    else if(act?.id==='tab-plan')renderPlan();
+    else if(act?.id==='tab-score')renderScore();
+    else if(act?.id==='tab-day')renderDayPlan();
   }
 
   // ── Input-Guard: keine Remote-Änderung während Nutzereingabe ─
@@ -3816,17 +3887,20 @@ function hideTlTip(){const tip=document.getElementById('dp-tl-tip');if(tip)tip.s
   let pushTimer=null;
 
   async function push(keepalive=false){
+    if(!currentUser)return;
     clearTimeout(pushTimer);
     const state=readLocal();
     const json=JSON.stringify(state);
     if(json===lastSyncedJson)return;   // nichts Neues
-    const body=JSON.stringify({app_key:APP_KEY,state,updated_at:new Date().toISOString()});
+    const body=JSON.stringify({user_id:currentUser.id,state,updated_at:new Date().toISOString()});
     if(keepalive){
       // fetch mit keepalive für Tab-Close — Supabase-SDK unterstützt keepalive nicht
+      const session=(await sb.auth.getSession()).data.session;
+      if(!session?.access_token)return;
       try{
         await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}`,{
           method:'POST',keepalive:true,
-          headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,
+          headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+session.access_token,
             'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
           body
         });
@@ -3836,7 +3910,7 @@ function hideTlTip(){const tip=document.getElementById('dp-tl-tip');if(tip)tip.s
     }
     try{
       const{error}=await sb.from(TABLE)
-        .upsert({app_key:APP_KEY,state,updated_at:new Date().toISOString()},{onConflict:'app_key'});
+        .upsert({user_id:currentUser.id,state,updated_at:new Date().toISOString()},{onConflict:'user_id'});
       if(error)throw error;
       lastSyncedJson=json;
       setDot('ok');
@@ -3863,19 +3937,94 @@ function hideTlTip(){const tip=document.getElementById('dp-tl-tip');if(tip)tip.s
     if(state==='ok'){
       if(topDot){topDot.textContent='☁';topDot.style.opacity='1';topDot.title='Synced ✓';setTimeout(()=>topDot.style.opacity='.45',2500);}
       if(cardDot){cardDot.style.background='var(--primary)';cardDot.style.opacity='1';setTimeout(()=>cardDot.style.opacity='.4',2500);}
-      if(cardTxt)cardTxt.textContent='☁️ Cloud-Sync aktiv — Handy & PC synchronisieren automatisch';
+      if(cardTxt)cardTxt.textContent='☁️ Cloud-Sync aktiv — deine Daten sind mit deinem Login verknüpft';
     }else if(state==='err'){
       if(topDot){topDot.textContent='⚠';topDot.style.opacity='1';topDot.title='Sync-Fehler — SQL-Tabelle prüfen';}
       if(cardDot){cardDot.style.background='#f87171';cardDot.style.opacity='1';}
-      if(cardTxt)cardTxt.textContent='⚠️ Sync-Fehler — Supabase-Tabelle app_state prüfen';
+      if(cardTxt)cardTxt.textContent='⚠️ Sync-Fehler — Supabase Auth/Tabelle prüfen';
+    }else if(state==='off'){
+      if(topDot){topDot.textContent='☁';topDot.style.opacity='.25';topDot.title='Bitte einloggen für Cloud-Sync';}
+      if(cardDot){cardDot.style.background='var(--muted)';cardDot.style.opacity='.35';}
+      if(cardTxt)cardTxt.textContent='☁️ Einloggen, damit deine Daten privat synchronisiert werden';
     }
   }
 
-  // ── Init: Pull + Realtime-Abo ─────────────────────────────
-  async function init(){
+  function setAuthMessage(msg,type){
+    const el=document.getElementById('auth-message');
+    if(!el)return;
+    el.textContent=msg||'';
+    el.className='auth-message'+(type?' '+type:'');
+  }
+
+  function updateAuthUi(){
+    const btn=document.getElementById('auth-user-btn');
+    const email=document.getElementById('auth-user-email');
+    const signout=document.getElementById('auth-signout-btn');
+    const submit=document.getElementById('auth-submit-btn');
+    const close=document.getElementById('auth-close-btn');
+    if(btn)btn.classList.toggle('signed-in',!!currentUser);
+    if(email)email.textContent=currentUser?.email||'Login';
+    if(signout)signout.style.display=currentUser?'':'none';
+    if(submit)submit.style.display=currentUser?'none':'';
+    if(close)close.textContent=currentUser?'Schließen':'Später';
+  }
+
+  window.openAuthDialog=function(){
+    updateAuthUi();
+    setAuthMessage(currentUser?'Du bist angemeldet. Deine Daten werden getrennt von anderen Nutzern gespeichert.':'');
+    document.getElementById('auth-overlay')?.classList.add('show');
+  };
+  window.closeAuthDialog=function(){document.getElementById('auth-overlay')?.classList.remove('show');};
+  window.setAuthMode=function(mode){
+    authMode=mode;
+    document.getElementById('auth-tab-login')?.classList.toggle('active',mode==='login');
+    document.getElementById('auth-tab-signup')?.classList.toggle('active',mode==='signup');
+    const submit=document.getElementById('auth-submit-btn');
+    if(submit)submit.textContent=mode==='signup'?'Account erstellen':'Anmelden';
+    setAuthMessage('');
+  };
+  window.submitAuth=async function(){
+    const email=document.getElementById('auth-email')?.value.trim();
+    const password=document.getElementById('auth-password')?.value;
+    if(!email||!password){setAuthMessage('Bitte E-Mail und Passwort eingeben.','err');return;}
+    setAuthMessage(authMode==='signup'?'Account wird erstellt...':'Login läuft...');
+    const opts={email,password};
+    const res=authMode==='signup'
+      ?await sb.auth.signUp({...opts,options:{emailRedirectTo:location.origin+location.pathname}})
+      :await sb.auth.signInWithPassword(opts);
+    if(res.error){setAuthMessage(res.error.message,'err');return;}
+    setAuthMessage(authMode==='signup'?'Account erstellt. Falls E-Mail-Bestätigung aktiv ist, prüfe dein Postfach.':'Angemeldet.','ok');
+    if(authMode==='login')closeAuthDialog();
+  };
+  window.signOutUser=async function(){
+    await push();
+    await sb.auth.signOut();
+    closeAuthDialog();
+  };
+
+  // ── Init: Auth, Pull + Realtime-Abo ───────────────────────
+  async function startForUser(user){
+    currentUser=user;
+    updateAuthUi();
+    if(channel){await sb.removeChannel(channel);channel=null;}
+    if(!user){
+      currentUser=null;
+      if(localStorage.getItem(USER_KEY))resetSyncedLocal();
+      lastSyncedJson=null;
+      _del(USER_KEY);
+      setDot('off');
+      renderAfterAuthChange();
+      return;
+    }
+    const lastUser=localStorage.getItem(USER_KEY);
+    if(lastUser&&lastUser!==user.id){
+      resetSyncedLocal();
+      lastSyncedJson=JSON.stringify(readLocal());
+    }
+    _set(USER_KEY,user.id);
     try{
       const{data:row,error}=await sb.from(TABLE)
-        .select('state').eq('app_key',APP_KEY).maybeSingle();
+        .select('state').eq('user_id',user.id).maybeSingle();
       if(error)throw error;
 
       if(row?.state&&Object.keys(row.state).length>0){
@@ -3889,21 +4038,23 @@ function hideTlTip(){const tip=document.getElementById('dp-tl-tip');if(tip)tip.s
           setDot('ok');
         }
       }else{
-        // Erste Nutzung: lokale Daten hochladen damit nichts verloren geht
+        // Erste Nutzung: vorhandene lokale Daten werden in diesen Account übernommen.
         const local=readLocal();
         if(Object.keys(local).length>0){
           lastSyncedJson=JSON.stringify(local);
           await sb.from(TABLE)
-            .upsert({app_key:APP_KEY,state:local,updated_at:new Date().toISOString()},{onConflict:'app_key'});
+            .upsert({user_id:user.id,state:local,updated_at:new Date().toISOString()},{onConflict:'user_id'});
+          setDot('ok');
+        }else{
           setDot('ok');
         }
       }
     }catch(e){setDot('err');toast('☁️ Sync-Fehler: '+e.message);console.warn('[Sync] Init fehlgeschlagen:',e.message);}
 
     // Realtime-Abo — Änderungen anderer Geräte innerhalb ~1s empfangen
-    sb.channel('dt-sync')
+    channel=sb.channel('dt-sync-'+user.id)
       .on('postgres_changes',{event:'*',schema:'public',table:TABLE,
-        filter:'app_key=eq.'+APP_KEY},payload=>{
+        filter:'user_id=eq.'+user.id},payload=>{
         const newState=payload.new?.state;
         if(!newState)return;
         const incoming=JSON.stringify(newState);
@@ -3912,6 +4063,12 @@ function hideTlTip(){const tip=document.getElementById('dp-tl-tip');if(tip)tip.s
         scheduleApply(newState);
       })
       .subscribe();
+  }
+
+  async function init(){
+    const {data:{session}}=await sb.auth.getSession();
+    await startForUser(session?.user||null);
+    sb.auth.onAuthStateChange((_event,session)=>startForUser(session?.user||null));
   }
 
   // ── Beim Schließen sofort flushen ─────────────────────────
