@@ -3260,6 +3260,16 @@ function confirmSyncImport(){
   toast(`${lang==='de'?'Importiert':'Imported'}: ${added} ${t('impNew')}, ${updated} ${t('impUpd')} ✓`);
 }
 
+// ── Collapse state — declared here so init block can use them ─
+const UISTATE_KEY='daily-tracker-ui-state';
+let uiState={};
+const COLLAPSE_DEFAULTS={
+  'health-calc':false,'health-sync':false,'health-kcbal':true,
+  'health-charts':true,'health-cal':false,'health-log':true,
+  'todos-chart':true,'todos-week':true,'todos-month':true,'todos-manage':false,
+  'sport-cal':false,'sport-hist':true,
+  'day-cal':true,'day-focus':false
+};
 // ── Init ──────────────────────────────────────────────────
 viewDate=todayStr();
 document.documentElement.setAttribute('data-theme',theme);
@@ -3272,7 +3282,6 @@ else if(urlTab==='health'){_activateTab('health');renderHealth();}
 else if(urlTab==='plan'){_activateTab('plan');renderPlan();}
 else if(urlTab==='cal'){_activateTab('cal');renderCal();}
 else renderTodos();
-applyAllCollapses();
 document.getElementById('sport-date').value=todayStr();
 document.getElementById('h-date').value=todayStr();
 document.getElementById('plan-start').value=todayStr();
@@ -3446,8 +3455,6 @@ function renderDpCal(){
 function selectDpDay(ds){dpDate=ds;renderDayPlan();document.getElementById('dp-blocks-list').scrollIntoView({behavior:'smooth',block:'nearest'});}
 
 // ── Collapsible sections ──────────────────────────────────────
-const UISTATE_KEY='daily-tracker-ui-state';
-let uiState={};
 function loadUiState(){try{uiState=JSON.parse(localStorage.getItem(UISTATE_KEY))||{};}catch{uiState={};}}
 function saveUiState(){localStorage.setItem(UISTATE_KEY,JSON.stringify(uiState));}
 function isSectionOpen(key,def=true){return uiState[key]!==undefined?uiState[key]:def;}
@@ -3460,13 +3467,6 @@ function applyCollapse(key,def=true){
   body.style.display=open?'':'none';
   if(icon)icon.classList.toggle('closed',!open);
 }
-const COLLAPSE_DEFAULTS={
-  'health-calc':false,'health-sync':false,'health-kcbal':true,
-  'health-charts':true,'health-cal':false,'health-log':true,
-  'todos-chart':true,'todos-week':true,'todos-month':true,'todos-manage':false,
-  'sport-cal':false,'sport-hist':true,
-  'day-cal':true,'day-focus':false
-};
 function applyAllCollapses(){loadUiState();Object.entries(COLLAPSE_DEFAULTS).forEach(([k,d])=>applyCollapse(k,d));}
 
 // ── Daily Score ───────────────────────────────────────────────
